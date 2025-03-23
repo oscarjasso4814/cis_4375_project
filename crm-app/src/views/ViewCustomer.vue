@@ -429,6 +429,7 @@ html, body {
   border-bottom: 1px solid #333;
   height: 60px;
   width: 100%;
+  margin-top: 65px;
   box-sizing: border-box;
 }
 
