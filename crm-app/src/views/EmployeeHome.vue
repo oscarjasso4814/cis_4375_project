@@ -1,62 +1,47 @@
 <template>
-  <div class="bg-[#f4f4f4] min-h-screen py-10">
+  <div>
     <!-- Navigation Bar -->
-    <nav class="flex justify-center gap-6 py-4 bg-[#007bff] text-white text-lg">
-      <router-link class="hover:underline" to="/">Home</router-link>
-      <router-link class="hover:underline" to="/profile">Profile</router-link>
-      <router-link class="hover:underline" to="/tasks">Tasks</router-link>
-      <router-link class="hover:underline" to="/settings">Settings</router-link>
+    <nav>
+      <a href="#">Home</a>
+      <a href="#profile">Profile</a>
+      <a href="#tasks">Tasks</a>
+      <a href="#settings">Settings</a>
     </nav>
 
-    <!-- Add Customer (Top Section) -->
-    <div class="max-w-[900px] mx-auto mt-8 p-6 bg-white rounded shadow">
-      <h2 class="text-2xl font-semibold text-center">Customers</h2>
-      <div class="text-center mt-4">
-        <button
-          @click="addCustomer"
-          class="px-5 py-2 text-lg bg-green-600 text-white rounded hover:bg-green-700"
-        >
-          Add Customer
-        </button>
-      </div>
+    <!-- Add Customer -->
+    <div class="add-customer">
+      <h2>Customers</h2>
+      <button class="add-customer-btn" @click="addCustomer">Add Customer</button>
     </div>
 
     <!-- Main Container -->
-    <div class="max-w-[900px] mx-auto mt-8 p-6 bg-white rounded shadow">
-      <h1 class="text-3xl font-bold text-center">Welcome, {{ repName }}</h1>
-      <!-- Video Section -->
-      <div class="mt-10 p-4 border rounded bg-white shadow">
-        <h2 class="text-xl font-semibold">Company Announcement</h2>
-        <div class="flex justify-center mt-4">
-          <iframe
-            width="560"
-            height="315"
-            src="https://www.youtube.com/embed/tMya2WkbQgM"
-            allowfullscreen
-          ></iframe>
+    <div class="container">
+      <h1>Welcome, "EMPLOYEE NAME"</h1>
+
+      <div class="video-section">
+        <h2>Company Announcement</h2>
+        <div class="video-container">
+          <iframe src="https://www.youtube.com/embed/tMya2WkbQgM" allowfullscreen></iframe>
         </div>
       </div>
 
-      <!-- Profile -->
-      <div class="profile mt-8 p-4 border rounded bg-white shadow">
-        <h2 class="text-xl font-semibold">Your Profile</h2>
-        <p>Name: {{ repName }}</p>
+      <div class="profile">
+        <h2>Your Profile</h2>
+        <p>Name: John Doe</p>
         <p>Position: Insurance Agent</p>
       </div>
 
-      <!-- Tasks -->
-      <div class="tasks mt-8 p-4 border rounded bg-white shadow">
-        <h2 class="text-xl font-semibold">Tasks</h2>
-        <ul class="list-disc list-inside mt-2 text-left">
+      <div class="tasks">
+        <h2>Tasks</h2>
+        <ul>
           <li>Complete project report</li>
           <li>Attend team meeting at 3 PM</li>
           <li>Review code updates</li>
         </ul>
       </div>
 
-      <!-- Settings -->
-      <div class="settings mt-8 p-4 border rounded bg-white shadow">
-        <h2 class="text-xl font-semibold">Settings</h2>
+      <div class="settings">
+        <h2>Settings</h2>
         <p>Update your password, notification preferences, and other settings.</p>
       </div>
     </div>
@@ -91,8 +76,89 @@ onMounted(async () => {
 </script>
 
 <style>
-/* Optional global font fallback if you're not using Tailwind's font classes */
 body {
   font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+  background-color: #f4f4f4;
+}
+
+.container {
+  max-width: 900px;
+  margin: auto;
+  padding: 20px;
+  background: white;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  margin-top: 50px;
+}
+
+nav {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  padding: 10px;
+  background: #007bff;
+}
+
+nav a {
+  color: white;
+  text-decoration: none;
+  font-size: 18px;
+}
+
+.profile,
+.tasks,
+.settings,
+.video-section {
+  margin-top: 30px;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
+}
+
+.profile h2,
+.tasks h2,
+.settings h2,
+.video-section h2 {
+  color: #333;
+}
+
+.video-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+iframe {
+  width: 560px;
+  height: 315px;
+  border: none;
+}
+
+.add-customer {
+  margin-top: 30px;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
+}
+
+.add-customer-btn {
+  padding: 10px 20px;
+  font-size: 16px;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.add-customer-btn:hover {
+  background: #218838;
 }
 </style>
