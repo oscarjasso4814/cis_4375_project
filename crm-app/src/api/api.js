@@ -1,31 +1,12 @@
-// // API connection to Amazon RDS
-import { dbCredentials } from "./dbCredentials.js";
-import mysql from "mysql"
+import axios from "axios";
 
-var con = mysql.createConnection({
-  host: dbCredentials.host,
-  user: dbCredentials.user,
-  password: dbCredentials.password
-});
-
-con.connect(function(err) {
-  if (err) throw err;
-  console.log("Connected!");
-  var sql = "USE " + dbCredentials.dbname
-  con.query(sql, function (err) {
-    if (err) throw err;
-    console.log("Using " + dbCredentials.dbname);
-  });
-  getRepName(1);
-});
-
-export const getRepName = async (id) => {
-  var sql = "SELECT * FROM Representative WHERE RepresentativeID = " +  id;
-  con.query(sql, function (err, result) {
-    if (err) throw err;
-    var representative = result[0];
-    var representativeName = representative.FirstName + " " + representative.LastName
-    console.log(representativeName);
-    return representativeName;
-  });
-}
+// This function has been moved to the actual view it's used in. For some reason, axios doesn't respond fast enough to use return.
+// Use as a reference if needed.
+// export const getRepName = async (repid) => {
+//   axios.get('http://127.0.0.1:5000/api/rep/' + repid + '/name')
+//   .then((response) => {
+//     let representative = response.data[0].FirstName + " " + response.data[0].LastName
+//     console.log(representative);
+//     return representative;
+//   });
+// }

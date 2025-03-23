@@ -23,8 +23,7 @@
 
     <!-- Main Container -->
     <div class="max-w-[900px] mx-auto mt-8 p-6 bg-white rounded shadow">
-      <h1 class="text-3xl font-bold text-center">Welcome, { repName }</h1>
-
+      <h1 class="text-3xl font-bold text-center">Welcome, {{ repName }}</h1>
       <!-- Video Section -->
       <div class="mt-10 p-4 border rounded bg-white shadow">
         <h2 class="text-xl font-semibold">Company Announcement</h2>
@@ -41,7 +40,7 @@
       <!-- Profile -->
       <div class="profile mt-8 p-4 border rounded bg-white shadow">
         <h2 class="text-xl font-semibold">Your Profile</h2>
-        <p>Name: John Doe</p>
+        <p>Name: {{ repName }}</p>
         <p>Position: Insurance Agent</p>
       </div>
 
@@ -65,9 +64,8 @@
 </template>
 
 <script setup>
-import { getRepName } from '../api/api';
 import { ref, onMounted } from 'vue';
-import { Buffer } from 'buffer/'
+import axios from "axios";
 
 const repName = ref("")
 
@@ -75,9 +73,20 @@ const addCustomer = () => {
   alert("Customer added!");
 };
 
-onMounted(
-  repName.value = await getRepName(1)
-);
+// function to get the representative's name
+async function getRepName(repid) {
+  axios.get('http://127.0.0.1:5000/api/rep/' + repid + '/name')
+  .then((response) => {
+    let representative = response.data[0].FirstName + " " + response.data[0].LastName
+    repName.value = representative;
+  });
+}
+
+onMounted(async () => {
+  // TODO: Needs to be passed a prop for which representative to load.
+  getRepName(1);
+  console.log(repName.value)
+});
 
 </script>
 
