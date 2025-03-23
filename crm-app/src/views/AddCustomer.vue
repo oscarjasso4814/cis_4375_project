@@ -75,8 +75,8 @@ const cancelEdit = () => {
 
 <template>
     <div class="customer-edit-container">
-      <h2>Customer Edit</h2>
-      <button class="hide-button" @click="hideCustomer">Hide This Customer</button>
+      <h2>Add Customer</h2>
+      <input type="checkbox" class="hide-button" @click="hideCustomer">Hide This Customer</input>
       
       <div class="form-row">
         <div class="form-group">
@@ -458,20 +458,43 @@ const cancelEdit = () => {
 
 <style scoped>
 .customer-edit-container {
+  width: 100%;
   max-width: 800px;
-  margin: 0 auto;
+  margin: 40px; /* Centers the container horizontally */
   padding: 20px;
+  /* Remove any alignment that might be pushing it to the right */
+  float: none;
+  position: static;
 }
 
+/* This targets the parent container if there's one wrapping your form */
+body, main, #app, .content-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Centers child elements horizontally */
+  width: 100%;
+}
+
+/* Make sure any parent containers don't have padding that's offsetting the centering */
+body, #app, main, .content-wrapper {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* Ensure all form rows are centered */
 .form-row {
   display: flex;
   flex-wrap: wrap;
   margin-bottom: 15px;
+  width: 100%;
+  justify-content: center; /* Center the form rows */
 }
 
+/* Make form elements consistent width */
 .form-group {
   flex: 1;
   margin-right: 15px;
+  max-width: 100%; /* Prevent overflow */
 }
 
 .form-group:last-child {
