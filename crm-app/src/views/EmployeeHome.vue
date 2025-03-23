@@ -23,7 +23,7 @@
 
     <!-- Main Container -->
     <div class="max-w-[900px] mx-auto mt-8 p-6 bg-white rounded shadow">
-      <h1 class="text-3xl font-bold text-center">Welcome, "EMPLOYEE NAME"</h1>
+      <h1 class="text-3xl font-bold text-center">Welcome, { repName }</h1>
 
       <!-- Video Section -->
       <div class="mt-10 p-4 border rounded bg-white shadow">
@@ -65,9 +65,20 @@
 </template>
 
 <script setup>
+import { getRepName } from '../api/api';
+import { ref, onMounted } from 'vue';
+import { Buffer } from 'buffer/'
+
+const repName = ref("")
+
 const addCustomer = () => {
   alert("Customer added!");
 };
+
+onMounted(
+  repName.value = await getRepName(1)
+);
+
 </script>
 
 <style>
