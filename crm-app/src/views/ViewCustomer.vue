@@ -234,6 +234,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
+import axios from "axios";
 
 // Insurance type tabs with icons
 const insuranceTypes = [
@@ -389,10 +390,21 @@ const openMailingServices = () => {
   // Implementation would go here
 };
 
+// function to get customer information
+async function getCustomerProfile(custid) {
+  axios.get('http://127.0.0.1:5000/api/customer/' + custid)
+  .then((response) => {
+    let customerData = response.data[0];
+    console.log(customerData)
+    customer.name = customerData.FirstName + " " + customerData.LastName;
+  });
+}
+
 // Lifecycle hook
 onMounted(() => {
   console.log('Updated customer profile component mounted');
-  // You could fetch customer data here
+  // TODO: Update input to a passed prop when page is loaded
+  getCustomerProfile(1);
 });
 </script>
 
@@ -410,7 +422,6 @@ html, body {
 .profile-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
   width: 100%;
   margin: 0;
   padding: 0;

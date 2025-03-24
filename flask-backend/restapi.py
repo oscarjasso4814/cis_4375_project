@@ -32,4 +32,13 @@ def get_rep_name(repid):
     representative = cursor.fetchall()
     return jsonify(representative)
 
+# GET API for getting a customer's profile
+@app.route('/api/customer/<custid>', methods=['GET'])
+def get_customer(custid):
+    # Retrieves representative data
+    sql = "SELECT * FROM Customer WHERE CustomerID = " + custid;
+    cursor.execute(sql)
+    customer = cursor.fetchall()
+    return jsonify(customer)
+
 app.run()
