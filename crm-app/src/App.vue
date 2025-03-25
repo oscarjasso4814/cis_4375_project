@@ -27,6 +27,7 @@ import { ref, onMounted } from 'vue';
             <li><RouterLink to="/contact/phone">Phone</RouterLink></li>
           </ul>
         </li>
+        <li><RouterLink to="/login">Login</RouterLink></li>
       </ul>
     </nav>
     
