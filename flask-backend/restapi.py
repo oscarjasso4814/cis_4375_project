@@ -32,4 +32,30 @@ def get_rep_name(repid):
     representative = cursor.fetchall()
     return jsonify(representative)
 
+# API for searching customers by name (First, Middle, Last) WIP!
+@app.route('/api/customers/search', methods=['GET'])
+def search_customers():
+    query = request.args.get('query', '')
+    if not query:
+        return jsonify([])
+
+    sql = """
+        SELECT CustomerID, FirstName, MiddleName, LastName
+        FROM Customer
+        WHERE FirstName LIKE %s OR MiddleName LIKE %s OR LastName LIKE %s
+        LIMIT 10
+    """
+    cursor.execute(sql, (f"%{query}%", f"%{query}%", f"%{query}%"))
+    rows = cursor.fetchall()
+
+    customers = [
+        {
+            "id": row["CustomerID"],
+            "name": f"{row['FirstName']} {row['MiddleName']} {row['LastName']}".strip()
+        }
+        for row in rows
+    ]
+    return jsonify(customers)
+
+    
 app.run()

@@ -1,9 +1,15 @@
 <script setup>
-import { ref } from 'vue';
+import { ref } from "vue";
+import axios from "axios";
 
 // State for managing overlays
 const showAnnouncementOverlay = ref(false);
 const showTasksOverlay = ref(false);
+
+// State for search query and results
+const query = ref("");
+const results = ref([]);
+const hasSearched = ref(false);
 
 // Toggle functions for overlays
 const toggleAnnouncements = () => {
@@ -24,27 +30,41 @@ const toggleTasks = () => {
 const announcements = [
   {
     title: "Company Announcement",
-    videoUrl: "https://www.youtube.com/embed/tMya2WkbQgM"
-  }
+    videoUrl: "https://www.youtube.com/embed/tMya2WkbQgM",
+  },
 ];
 
 // Dummy data for tasks
-const tasks = [
-  "Complete project report",
-  "Attend team meeting at 3 PM",
-  "Review code updates"
-];
+const tasks = ["Complete project report", "Attend team meeting at 3 PM", "Review code updates"];
 
-// Search functionality
-const searchQuery = ref('');
-const handleSearch = () => {
-  // Implement search functionality
-  console.log(`Searching for: ${searchQuery.value}`);
+//ANDREWS
+const searchCustomers = async () => {
+  // Added for debugging REMOVE LATER!!!!! --Andrews
+  console.log("Search button clicked!", query.value);
+
+  if (!query.value.trim()) {
+    results.value = [];
+    hasSearched.value = false;
+    return;
+  }
+
+  try {
+    const res = await axios.get("/api/customers/search", {
+      params: { query: query.value },
+    });
+    console.log("API returned:", res.data);
+    results.value = res.data;
+    hasSearched.value = true;
+  } catch (err) {
+    console.error("Error searching customers:", err);
+    results.value = [];
+    hasSearched.value = true;
+  }
 };
 
 // Add customer functionality
 const addCustomer = () => {
-  console.log('Add customer button clicked');
+  console.log("Add customer button clicked");
   // Implement customer addition logic here
 };
 </script>
@@ -55,18 +75,18 @@ const addCustomer = () => {
     <div class>
       <!-- First yellow box button - positioned higher on the page -->
       <button
-        @click="toggleAnnouncements" 
+        @click="toggleAnnouncements"
         class="cabutton"
-        :class="{'bg-yellow-500': showAnnouncementOverlay}"
+        :class="{ 'bg-yellow-500': showAnnouncementOverlay }"
       >
         <span class="sidebuttons">Company Announcement</span>
       </button>
-      
+
       <!-- Second yellow box button - positioned directly below first button -->
       <button
-        @click="toggleTasks" 
+        @click="toggleTasks"
         class="tasks-button"
-        :class="{'bg-yellow-500': showTasksOverlay}"
+        :class="{ 'bg-yellow-500': showTasksOverlay }"
       >
         <span class="sidebuttons">Task</span>
       </button>
@@ -76,27 +96,40 @@ const addCustomer = () => {
     <div class="ml-16 p-4 flex flex-col items-center justify-center min-h-screen">
       <!-- Customer search section -->
       <div class="w-full max-w-3xl text-center">
-        <h2 class="text-white text-2xl font-bold mb-6">Search Customer</h2>
-        
         <div class="flex space-x-4">
-          <!-- Search Bar styled exactly like CodePen example -->
-          <div class="flex-grow">
-            <div class="search-container">
-              <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
-              </svg>
-              <input 
-                type="text" 
-                v-model="searchQuery" 
-                @keyup.enter="handleSearch" 
-                placeholder="Enter customer name"
-                class="search-input"
+          <!-- Andrews START-->
+          <div class="max-w-xl mx-auto p-4">
+            <h2 class="text-xl font-bold text-white mb-4">Search Customers</h2>
+
+            <div class="flex gap-2">
+              <input
+                v-model="query"
+                type="text"
+                placeholder="Enter a name..."
+                class="flex-grow px-3 py-2 rounded text-black"
               />
+              <button @click="searchCustomers" class="bg-blue-600 text-white px-4 py-2 rounded">
+                Search
+              </button>
+            </div>
+
+            <div class="mt-4 text-white">
+              <h3 class="font-semibold" v-if="results.length">Results:</h3>
+              <ul>
+                <li v-for="customer in results" :key="customer.id" class="py-1">
+                  {{ customer.name }}
+                </li>
+              </ul>
+
+              <p v-if="results.length === 0 && hasSearched" class="text-gray-400">
+                No matching customers found.
+              </p>
             </div>
           </div>
-          
+          <!-- Andrews END-->
+
           <!-- Add Customer Button -->
-          <button 
+          <button
             @click="addCustomer"
             class="px-6 py-2 bg-yellow-400 text-black font-bold rounded hover:bg-yellow-500 flex items-center transition duration-150 ease-in-out"
           >
@@ -107,20 +140,23 @@ const addCustomer = () => {
     </div>
 
     <!-- Overlay for announcements (if needed) -->
-    <div v-if="showAnnouncementOverlay" class="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
+    <div
+      v-if="showAnnouncementOverlay"
+      class="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4"
+    >
       <div class="bg-gray-800 p-6 rounded-lg max-w-2xl w-full">
         <h2 class="text-white text-xl font-bold mb-4">Company Announcement</h2>
         <div class="aspect-video w-full">
-          <iframe 
-            width="100%" 
-            height="100%" 
-            src="https://www.youtube.com/embed/tMya2WkbQgM" 
-            frameborder="0" 
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+          <iframe
+            width="100%"
+            height="100%"
+            src="https://www.youtube.com/embed/tMya2WkbQgM"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowfullscreen
           ></iframe>
         </div>
-        <button 
+        <button
           @click="toggleAnnouncements"
           class="mt-4 px-4 py-2 bg-yellow-400 text-black font-bold rounded hover:bg-yellow-500"
         >
@@ -130,7 +166,10 @@ const addCustomer = () => {
     </div>
 
     <!-- Overlay for tasks (if needed) -->
-    <div v-if="showTasksOverlay" class="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
+    <div
+      v-if="showTasksOverlay"
+      class="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4"
+    >
       <div class="bg-gray-800 p-6 rounded-lg max-w-md w-full">
         <h2 class="text-white text-xl font-bold mb-4">Tasks</h2>
         <ul class="text-white space-y-2">
@@ -139,7 +178,7 @@ const addCustomer = () => {
             <span>{{ task }}</span>
           </li>
         </ul>
-        <button 
+        <button
           @click="toggleTasks"
           class="mt-4 px-4 py-2 bg-yellow-400 text-black font-bold rounded hover:bg-yellow-500"
         >
