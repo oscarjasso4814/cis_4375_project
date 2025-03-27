@@ -10,6 +10,8 @@ const showTasksOverlay = ref(false);
 const query = ref("");
 const results = ref([]);
 const hasSearched = ref(false);
+const showDropdown = ref(false);
+const selectedCustomerId = ref(null);
 
 // Toggle functions for overlays
 const toggleAnnouncements = () => {
@@ -37,14 +39,12 @@ const announcements = [
 // Dummy data for tasks
 const tasks = ["Complete project report", "Attend team meeting at 3 PM", "Review code updates"];
 
-//ANDREWS
+//ANDREWS Script Start
 const searchCustomers = async () => {
-  // Added for debugging REMOVE LATER!!!!! --Andrews
-  console.log("Search button clicked!", query.value);
-
   if (!query.value.trim()) {
     results.value = [];
     hasSearched.value = false;
+    showDropdown.value = false;
     return;
   }
 
@@ -52,15 +52,27 @@ const searchCustomers = async () => {
     const res = await axios.get("/api/customers/search", {
       params: { query: query.value },
     });
-    console.log("API returned:", res.data);
     results.value = res.data;
     hasSearched.value = true;
+    showDropdown.value = true;
   } catch (err) {
     console.error("Error searching customers:", err);
     results.value = [];
     hasSearched.value = true;
+    showDropdown.value = false;
   }
 };
+// Function to handle customer selection
+// Stores ID of selected customer in a variable
+// and closes the dropdown
+const selectCustomer = (customer) => {
+  query.value = customer.name;
+  selectedCustomerId.value = customer.id;
+  showDropdown.value = false;
+  console.log("Selected customer ID:", customer.id);
+};
+
+//ANDREWS Script End
 
 // Add customer functionality
 const addCustomer = () => {
@@ -98,34 +110,41 @@ const addCustomer = () => {
       <div class="w-full max-w-3xl text-center">
         <div class="flex space-x-4">
           <!-- Andrews START-->
-          <div class="max-w-xl mx-auto p-4">
+          <div class="relative max-w-xl w-full mx-auto p-4">
             <h2 class="text-xl font-bold text-white mb-4">Search Customers</h2>
 
-            <div class="flex gap-2">
-              <input
-                v-model="query"
-                type="text"
-                placeholder="Enter a name..."
-                class="flex-grow px-3 py-2 rounded text-black"
-              />
-              <button @click="searchCustomers" class="bg-blue-600 text-white px-4 py-2 rounded">
-                Search
-              </button>
-            </div>
+            <input
+              v-model="query"
+              @input="searchCustomers"
+              @focus="showDropdown = true"
+              type="text"
+              placeholder="Enter a name..."
+              class="w-full px-3 py-2 rounded text-black"
+            />
 
-            <div class="mt-4 text-white">
-              <h3 class="font-semibold" v-if="results.length">Results:</h3>
-              <ul>
-                <li v-for="customer in results" :key="customer.id" class="py-1">
-                  {{ customer.name }}
-                </li>
-              </ul>
+            <!-- Dropdown menu -->
+            <ul
+              v-if="showDropdown && results.length > 0"
+              class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded shadow max-h-60 overflow-y-auto"
+            >
+              <li
+                v-for="customer in results"
+                :key="customer.id"
+                @click="selectCustomer(customer)"
+                class="px-4 py-2 cursor-pointer hover:bg-gray-100"
+              >
+                <div class="font-semibold">{{ customer.name }}</div>
+                <div class="text-sm text-gray-600">
+                  ID: {{ customer.id }} | {{ customer.email }} | {{ customer.phone }}
+                </div>
+              </li>
+            </ul>
 
-              <p v-if="results.length === 0 && hasSearched" class="text-gray-400">
-                No matching customers found.
-              </p>
-            </div>
+            <p v-if="results.length === 0 && hasSearched" class="text-gray-400 mt-2">
+              No matching customers found.
+            </p>
           </div>
+
           <!-- Andrews END-->
 
           <!-- Add Customer Button -->
