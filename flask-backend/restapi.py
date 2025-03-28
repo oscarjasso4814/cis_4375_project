@@ -126,11 +126,10 @@ def post_data_no_id(table):
 @app.route('/api/<table>/<tableid>', methods=['DELETE'])
 def delete_data(table, tableid):
     # Retrieves data
-    sql = f"SELECT * FROM {table} WHERE {table}ID = {tableid}";
+    sql = f"DELETE FROM {table} WHERE {table}ID = {tableid}";
     # Runs and commits the data insertion
     cursor.execute(sql)
-    tabledata = cursor.fetchall()
-    return jsonify(tabledata)
+    return "DELETE Request Sucessful"
 
 # POST API for adding a table entry
 @app.route('/api/<table>', methods=['POST'])
