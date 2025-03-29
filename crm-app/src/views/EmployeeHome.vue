@@ -70,7 +70,6 @@ async function getRepName(repid) {
 onMounted(async () => {
   // TODO: Needs to be passed a prop for which representative to load.
   getRepName(1);
-  console.log(repName.value)
 });
 
 </script>
