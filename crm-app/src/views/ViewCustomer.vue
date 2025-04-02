@@ -482,6 +482,7 @@ html, body {
   width: 100%;
   margin: 0;
   padding: 0;
+  padding-top: 65px;
   background-color: #121212;
   color: #f5f5f5;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;

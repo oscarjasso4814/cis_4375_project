@@ -36,7 +36,7 @@ def get_rep_name(repid):
 # GET API for getting a customer's profile
 @app.route('/api/customer/<custid>', methods=['GET'])
 def get_customer(custid):
-    # Retrieves representative data
+    # Formats data into sql select command
     sql = "SELECT * FROM Customer WHERE CustomerID = " + custid;
     # Runs and commits the data insertion
     cursor.execute(sql)
@@ -48,7 +48,7 @@ def get_customer(custid):
 # GET API for getting a table
 @app.route('/api/<table>', methods=['GET'])
 def get_data_all(table):
-    # Retrieves data
+    # Formats data into sql select command
     sql = f"SELECT * FROM {table}";
     # Runs and commits the data insertion
     cursor.execute(sql)
@@ -59,18 +59,22 @@ def get_data_all(table):
 @app.route('/api/<table>/<tableid>', methods=['GET'])
 def get_data(table, tableid):
     # Retrieves data
+    request_data = request.get_json()
+    # Formats data into sql select command
     sql = f"SELECT * FROM {table} WHERE {table}ID = {tableid}";
     # Runs and commits the data insertion
     cursor.execute(sql)
     tabledata = cursor.fetchall()
     return jsonify(tabledata)
 
+# GET API for getting 
+
 # PUT API for updating a table entry; expects JSON body
-@app.route('/api/<table>/<tableid>', methods=['PUT'])
+@app.route('/api/<table>/<tableid>', methods=['POST'])
 def post_data(table, tableid):
     # Retrieves request data
     request_data = request.get_json()
-
+    # compiles the key: value pairs from request data
     for (key, value) in request_data.items():
         # Skips the ID key value pair and null values
         if key == 'id' or value == None:
@@ -125,7 +129,7 @@ def post_data_no_id(table):
 # DELETE API for removing a table entry
 @app.route('/api/<table>/<tableid>', methods=['DELETE'])
 def delete_data(table, tableid):
-    # Retrieves data
+    # Formats data into sql delete command
     sql = f"DELETE FROM {table} WHERE {table}ID = {tableid}";
     # Runs and commits the data insertion
     cursor.execute(sql)
