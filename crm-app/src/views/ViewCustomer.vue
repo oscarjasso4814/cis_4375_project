@@ -234,6 +234,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
+import axios from "axios";
 
 // Insurance type tabs with icons
 const insuranceTypes = [
@@ -389,10 +390,78 @@ const openMailingServices = () => {
   // Implementation would go here
 };
 
+// Function to fetch and update customer information
+// Generated using ChatGPT:
+// Create a function following this initial layout (getCustomer() in ViewCustomer.vue)
+// but with series of customer.key = customerData.value statements similar to customer.name using the keys from this reactive const (customer in ViewCustomer.vue)
+// and this MySQL table's keys (Customer CREATE TABLE from Create_Database_and_Tables.sql)
+async function getCustomer(custid) {
+  axios.get(`http://127.0.0.1:5000/api/customer/${custid}`)
+    .then((response) => {
+      const customerData = response.data[0];
+
+      if (customerData) {
+        customer.name = customerData.FirstName + " " + customerData.LastName || '';
+        customer.address.street = customerData.Address || '';
+        customer.address.city = customerData.City || '';
+        customer.address.state = customerData.State || '';
+        customer.address.zip = customerData.Zip || '';
+        customer.mailingAddress = customerData.MailingAddress || '';
+        customer.email = customerData.Email1 || '';
+        customer.email2 = customerData.Email2 || '';
+        customer.cell = customerData.Phone1 || '';
+        customer.phone2 = customerData.Phone2 || '';
+        customer.phone3 = customerData.Phone3 || '';
+        customer.phone4 = customerData.BadPhone4 || '';
+        customer.language = customerData.Language || '';
+        customer.preferredContact = customerData.PrefferedContact || '';
+        customer.ssnTaxId = customerData.SocialSecurityNum || '';
+        customer.maritalStatus = customerData.MaritalStatus || '';
+        customer.gender = customerData.Gender || '';
+        customer.id = customerData.CustomerID || '';
+        customer.customerType = customerData.Type || '';
+        customer.accountType = customerData.AccountType || '';
+        customer.status = customerData.ActiveStatus ? 'Active' : 'Inactive';
+        customer.subStatus = customerData.SubsStatus || '';
+        customer.agentOfRecord = customerData.AgentRecordID || '';
+        customer.csr = customerData.RepresentativeID || '';
+        customer.office = customerData.Office || '';
+        customer.source = customerData.Source || '';
+        customer.subSource = customerData.SubSource || '';
+        customer.dateAdded = customerData.DateAdded || '';
+        customer.dob = customerData.DateOfBirth || '';
+        customer.dl = customerData.DriversLicenseNum || '';
+        customer.dlState = customerData.DriversLicenseState || '';
+        customer.householdSize = customerData.HouseholdSize || '';
+        customer.householdIncome = customerData.HouseholdIncome || '';
+
+        customer.preferences = {
+          'Do Not Email': customerData.DoNotEmail ? 'Yes' : 'No',
+          'Do Not Text': customerData.DoNotText ? 'Yes' : 'No',
+          'Do Not Call': customerData.DoNotCall ? 'Yes' : 'No',
+          'Do Not Mail': customerData.UndeliverableMail ? 'Yes' : 'No',
+          'Do Not Market': customerData.DoNotMarket ? 'Yes' : 'No',
+          'Do Not Capture Email': customerData.DoNotCaptureEmail ? 'Yes' : 'No'
+        };
+      }
+      else {
+          throw new Error ("No customer data returned");
+      }
+    })
+    .catch((error) => {
+      console.error('Error fetching customer data:', error);
+    });
+}
+
 // Lifecycle hook
-onMounted(() => {
+onMounted(async () => {
   console.log('Updated customer profile component mounted');
-  // You could fetch customer data here
+  // TODO: Update input to a passed prop when page is loaded
+  // getCustomer(2) returns the default values
+  getCustomer(2);
+  // getCustomer(3) tests if error catch works (check console)
+  //getCustomer(3);
+  // DO NOT run both at the same time; will crash flask
 });
 </script>
 
@@ -410,7 +479,6 @@ html, body {
 .profile-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
   width: 100%;
   margin: 0;
   padding: 0;
