@@ -23,7 +23,10 @@ Running back-end:
 ```
 cd flask-backend
 pip install flask
+pip install Werkzeug==2.2.2
 pip install flask_cors
 pip install mysql.connector
-py restapi.py
+py application.py
 ```
+
+For Elastic Beanstalk, zip the flask-backend folder and upload to application. Provide database credentials as credsHelp.py prior to zipping.
