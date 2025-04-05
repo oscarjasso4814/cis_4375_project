@@ -35,7 +35,7 @@ import { ref, onMounted } from 'vue';
   <RouterView />
 </template>
 
-<style scoped>
+<style>
 /* Base styles */
 
 
@@ -48,7 +48,7 @@ import { ref, onMounted } from 'vue';
 /* Logo in content area */
 .content-wrapper .logo {
   display: block;
-  margin: 2rem auto;
+  margin: auto;
 }
 
 /* Navigation styles */

@@ -157,9 +157,7 @@ body {
   padding: 0;
   overflow-x: hidden;
 }
-</style>
 
-<style scoped>
 /* Remove any spacing that might affect the positioning */
 main {
   padding: 0;
