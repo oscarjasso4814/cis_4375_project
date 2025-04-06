@@ -7,6 +7,8 @@ Vue.js 3 App
 
 Running front-end:
 
+*File named "apiurl.js" needs to be added in crm-app/api directory from Teams
+
 ```
 cd crm-app
 npm install
