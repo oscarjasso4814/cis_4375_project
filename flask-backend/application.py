@@ -43,6 +43,42 @@ def get_customer(custid):
     customer = cursor.fetchall()
     return jsonify(customer)
 
+# API for searching customers by name (First, Middle, Last) WIP!
+@application.route('/api/customers/search', methods=['GET'])
+def search_customers():
+    query = request.args.get('query', '')
+    if not query:
+        return jsonify([])
+
+    sql = """
+    SELECT CustomerID, FirstName, MiddleName, LastName, Email1, Phone1
+    FROM Customer
+    WHERE 
+        FirstName LIKE %s OR 
+        LastName LIKE %s OR 
+        MiddleName LIKE %s OR 
+        Email1 LIKE %s OR 
+        Phone1 LIKE %s OR 
+        CustomerID LIKE %s
+    LIMIT 10
+    """
+    cursor.execute(sql, (
+        f"%{query}%", f"%{query}%", f"%{query}%",
+        f"%{query}%", f"%{query}%", f"%{query}%"
+    ))
+    rows = cursor.fetchall()
+
+    customers = [
+        {
+        "id": row["CustomerID"],
+        "name": f"{row['FirstName']} {row['MiddleName'] or ''} {row['LastName']}".strip(),
+        "email": row["Email1"],
+        "phone": row["Phone1"]
+        }
+        for row in rows
+    ]
+    return jsonify(customers)
+
 # API BRAINSTORMING; NOT FINAL
 
 # GET API for getting a table
