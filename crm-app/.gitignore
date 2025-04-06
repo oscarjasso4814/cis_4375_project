@@ -29,3 +29,4 @@ coverage
 
 *.tsbuildinfo
 dbCredentials.js
+apiurl.js

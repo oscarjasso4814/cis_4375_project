@@ -235,6 +235,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
 import axios from "axios";
+import { url } from "../api/apiurl";
 
 // Insurance type tabs with icons
 const insuranceTypes = [
@@ -396,7 +397,7 @@ const openMailingServices = () => {
 // but with series of customer.key = customerData.value statements similar to customer.name using the keys from this reactive const (customer in ViewCustomer.vue)
 // and this MySQL table's keys (Customer CREATE TABLE from Create_Database_and_Tables.sql)
 async function getCustomer(custid) {
-  axios.get(`http://127.0.0.1:5000/api/customer/${custid}`)
+  axios.get(url + `/api/customer/${custid}`)
     .then((response) => {
       const customerData = response.data[0];
 
@@ -482,6 +483,7 @@ html, body {
   width: 100%;
   margin: 0;
   padding: 0;
+  padding-top: 65px;
   background-color: #121212;
   color: #f5f5f5;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
