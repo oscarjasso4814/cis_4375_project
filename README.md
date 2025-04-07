@@ -22,6 +22,8 @@ Running back-end:
 
 *File named "credsHelp.py" needs to be added in flask-backend directory from Teams
 
+
+
 ```
 cd flask-backend
 pip install flask
@@ -31,4 +33,9 @@ pip install mysql.connector
 py application.py
 ```
 
-For Elastic Beanstalk, zip the flask-backend folder and upload to application. Provide database credentials as credsHelp.py prior to zipping.
+For local deployment, create "apiurl.js" under crm-app/src/api with the following code:
+```
+export const url = "http://127.0.0.1:5000";
+```
+
+For Elastic Beanstalk deployment, zip the contents of the flask-backend folder (not the folder itself) and upload to application. Provide database credentials as credsHelp.py prior to zipping. Provide the same code as above but replace URL with Elastic Beanstalk domain.
