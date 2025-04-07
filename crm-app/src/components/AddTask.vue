@@ -56,7 +56,7 @@
 <script setup>
 import { ref, defineEmits, defineProps } from 'vue'
 import axios from 'axios'
-import { url } from ".../api/apiurl"
+import { url } from "../api/apiurl"
 
 const emit = defineEmits(['close'])
 const props = defineProps({
