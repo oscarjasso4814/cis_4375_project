@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from "vue";
 import axios from "axios";
+import { url } from "../api/apiurl";
 
 // State for managing overlays
 const showAnnouncementOverlay = ref(false);
@@ -49,7 +50,7 @@ const searchCustomers = async () => {
   }
 
   try {
-    const res = await axios.get("/api/customers/search", {
+    const res = await axios.get(url + "/api/customers/search", {
       params: { query: query.value },
     });
     results.value = res.data;
