@@ -20,8 +20,6 @@ For local deployment, create "apiurl.js" under crm-app/src/api with the followin
 export const url = "http://127.0.0.1:5000";
 ```
 
-For Elastic Beanstalk deployment, zip the contents of the flask-backend folder (not the folder itself) and upload to application. Provide database credentials as credsHelp.py prior to zipping. Provide the same code as above but replace URL with Elastic Beanstalk domain.
-
 ## Backend
 Python Flask
 
@@ -39,3 +37,11 @@ pip install flask_cors
 pip install mysql.connector
 py application.py
 ```
+
+For Elastic Beanstalk deployment, zip the contents of the flask-backend folder (not the folder itself) and upload to application. 
+Provide database credentials as credsHelp.py prior to zipping. 
+Create "apiurl.js" under crm-app/src/api with the following code: 
+```
+export const url = "elasticbeanstalkURLhere";
+```
+Replace the URL value with the Elastic Beanstalk domain.
