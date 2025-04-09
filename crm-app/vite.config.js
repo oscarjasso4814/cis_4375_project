@@ -12,6 +12,7 @@ export default defineConfig({
     },
   },
   server: {
+    allowedHosts: ['crm-web-demo-env.eba-376vnzty.us-east-1.elasticbeanstalk.com'],
     proxy: {
       "/api": {
         target: "http://localhost:5000", // Your Flask backend

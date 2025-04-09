@@ -2,6 +2,7 @@ import flask
 from flask import jsonify
 from flask import request
 from flask_cors import CORS
+from flask_cors import cross_origin
 import mysql.connector
 import credsHelp
 
@@ -22,6 +23,7 @@ cors = CORS()
 application = flask.Flask(__name__) #sets up the application
 application.config["DEBUG"] = True #allow to show errors in browser
 cors.init_app(application)
+@cross_origin()
 
 # GET API for getting a representative's name
 @application.route('/api/rep/<repid>/name', methods=['GET'])
