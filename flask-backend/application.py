@@ -19,12 +19,12 @@ cors = CORS()
 
 
 # Setting up an application name
-app = flask.Flask(__name__) #sets up the application
-app.config["DEBUG"] = True #allow to show errors in browser
-cors.init_app(app)
+application = flask.Flask(__name__) #sets up the application
+application.config["DEBUG"] = True #allow to show errors in browser
+cors.init_app(application)
 
 # GET API for getting a representative's name
-@app.route('/api/rep/<repid>/name', methods=['GET'])
+@application.route('/api/rep/<repid>/name', methods=['GET'])
 def get_rep_name(repid):
     # Retrieves representative data
     sql = "SELECT * FROM Representative WHERE RepresentativeID = " + repid;
@@ -34,21 +34,57 @@ def get_rep_name(repid):
     return jsonify(representative)
 
 # GET API for getting a customer's profile
-@app.route('/api/customer/<custid>', methods=['GET'])
+@application.route('/api/customer/<custid>', methods=['GET'])
 def get_customer(custid):
-    # Retrieves representative data
+    # Formats data into sql select command
     sql = "SELECT * FROM Customer WHERE CustomerID = " + custid;
     # Runs and commits the data insertion
     cursor.execute(sql)
     customer = cursor.fetchall()
     return jsonify(customer)
 
+# API for searching customers by name (First, Middle, Last) WIP!
+@application.route('/api/customers/search', methods=['GET'])
+def search_customers():
+    query = request.args.get('query', '')
+    if not query:
+        return jsonify([])
+
+    sql = """
+    SELECT CustomerID, FirstName, MiddleName, LastName, Email1, Phone1
+    FROM Customer
+    WHERE 
+        FirstName LIKE %s OR 
+        LastName LIKE %s OR 
+        MiddleName LIKE %s OR 
+        Email1 LIKE %s OR 
+        Phone1 LIKE %s OR 
+        CustomerID LIKE %s
+    LIMIT 10
+    """
+    cursor.execute(sql, (
+        f"%{query}%", f"%{query}%", f"%{query}%",
+        f"%{query}%", f"%{query}%", f"%{query}%"
+    ))
+    rows = cursor.fetchall()
+
+    customers = [
+        {
+        "id": row["CustomerID"],
+        "name": f"{row['FirstName']} {row['MiddleName'] or ''} {row['LastName']}".strip(),
+        "email": row["Email1"],
+        "phone": row["Phone1"]
+        }
+        for row in rows
+    ]
+    return jsonify(customers)
+
 # API BRAINSTORMING; NOT FINAL
 
 # GET API for getting a table
-@app.route('/api/<table>', methods=['GET'])
+@application.route('/api/<table>', methods=['GET'])
 def get_data_all(table):
-    # Retrieves data
+    # Formats data into sql select command
     sql = f"SELECT * FROM {table}";
     # Runs and commits the data insertion
     cursor.execute(sql)
@@ -56,21 +92,25 @@ def get_data_all(table):
     return jsonify(tabledata)
 
 # GET API for getting a table entry
-@app.route('/api/<table>/<tableid>', methods=['GET'])
+@application.route('/api/<table>/<tableid>', methods=['GET'])
 def get_data(table, tableid):
     # Retrieves data
+    request_data = request.get_json()
+    # Formats data into sql select command
     sql = f"SELECT * FROM {table} WHERE {table}ID = {tableid}";
     # Runs and commits the data insertion
     cursor.execute(sql)
     tabledata = cursor.fetchall()
     return jsonify(tabledata)
 
+# GET API for getting 
+
 # PUT API for updating a table entry; expects JSON body
-@app.route('/api/<table>/<tableid>', methods=['PUT'])
+@application.route('/api/<table>/<tableid>', methods=['POST'])
 def post_data(table, tableid):
     # Retrieves request data
     request_data = request.get_json()
-
+    # compiles the key: value pairs from request data
     for (key, value) in request_data.items():
         # Skips the ID key value pair and null values
         if key == 'id' or value == None:
@@ -93,7 +133,7 @@ def post_data(table, tableid):
     return "PUT Request Successful"
 
 # PUT API for updating a table entry; expects JSON body with ID as a value
-@app.route('/api/<table>', methods=['PUT'])
+@application.route('/api/<table>', methods=['PUT'])
 def post_data_no_id(table):
     # Retrieves request data
     request_data = request.get_json()
@@ -123,16 +163,16 @@ def post_data_no_id(table):
     return "PUT Request Successful"
 
 # DELETE API for removing a table entry
-@app.route('/api/<table>/<tableid>', methods=['DELETE'])
+@application.route('/api/<table>/<tableid>', methods=['DELETE'])
 def delete_data(table, tableid):
-    # Retrieves data
+    # Formats data into sql delete command
     sql = f"DELETE FROM {table} WHERE {table}ID = {tableid}";
     # Runs and commits the data insertion
     cursor.execute(sql)
     return "DELETE Request Sucessful"
 
 # POST API for adding a table entry
-@app.route('/api/<table>', methods=['POST'])
+@application.route('/api/<table>', methods=['POST'])
 def add_data(table):
     # Retrieves posted json and extracts data by keys
     request_data = request.get_json()
@@ -163,4 +203,5 @@ def add_data(table):
     conn.commit()
     return "Post Request Successful"
 
-app.run()
+if __name__ == "__main__":
+    application.run()

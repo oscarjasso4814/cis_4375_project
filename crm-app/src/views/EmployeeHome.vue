@@ -51,6 +51,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import axios from "axios";
+import { url } from "../api/apiurl";
 
 const repName = ref("")
 
@@ -60,7 +61,7 @@ const addCustomer = () => {
 
 // function to get the representative's name
 async function getRepName(repid) {
-  axios.get('http://127.0.0.1:5000/api/rep/' + repid + '/name')
+  axios.get(url + '/api/rep/' + repid + '/name')
   .then((response) => {
     let representative = response.data[0].FirstName + " " + response.data[0].LastName
     repName.value = representative;
