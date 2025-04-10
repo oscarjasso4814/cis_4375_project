@@ -1,3 +1,4 @@
+
 <!-- CustomerProfile.vue -->
 <template>
   <!-- Full page layout -->
@@ -1016,4 +1017,4 @@ html, body {
     white-space: nowrap;
   }
 }
-</style>
+</style> 

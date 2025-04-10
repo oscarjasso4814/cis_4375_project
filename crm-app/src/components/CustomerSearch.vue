@@ -3,9 +3,6 @@ import { ref } from "vue";
 import axios from "axios";
 import { url } from "../api/apiurl";
 
-// Overlay state
-const showAnnouncementOverlay = ref(false);
-const showTasksOverlay = ref(false);
 
 // Search state
 const query = ref("");
@@ -13,31 +10,6 @@ const results = ref([]);
 const hasSearched = ref(false);
 const showDropdown = ref(false);
 const selectedCustomerId = ref(null);
-
-// Toggle overlay functions
-const toggleAnnouncements = () => {
-  showAnnouncementOverlay.value = !showAnnouncementOverlay.value;
-  if (showAnnouncementOverlay.value) showTasksOverlay.value = false;
-};
-
-const toggleTasks = () => {
-  showTasksOverlay.value = !showTasksOverlay.value;
-  if (showTasksOverlay.value) showAnnouncementOverlay.value = false;
-};
-
-// Dummy data
-const announcements = [
-  {
-    title: "Company Announcement",
-    videoUrl: "https://www.youtube.com/embed/tMya2WkbQgM",
-  },
-];
-
-const tasks = [
-  "Complete project report",
-  "Attend team meeting at 3 PM",
-  "Review code updates",
-];
 
 // Search function
 const searchCustomers = async () => {
@@ -78,25 +50,6 @@ const addCustomer = () => {
 </script>
 
 <template>
-  <main class="main-container">
-    <!-- Sidebar Buttons -->
-    <div>
-      <button
-        @click="toggleAnnouncements"
-        class="cabutton"
-        :class="{ 'bg-yellow-500': showAnnouncementOverlay }"
-      >
-        <span class="sidebuttons">Company Announcement</span>
-      </button>
-
-      <button
-        @click="toggleTasks"
-        class="tasks-button"
-        :class="{ 'bg-yellow-500': showTasksOverlay }"
-      >
-        <span class="sidebuttons">Task</span>
-      </button>
-    </div>
 
     <!-- Centered Search Area -->
     <div class="search-center">
@@ -149,43 +102,6 @@ const addCustomer = () => {
       </div>
     </div>
 
-    <!-- Company Announcement Overlay -->
-    <div
-      v-if="showAnnouncementOverlay"
-      class="overlay-container"
-    >
-      <div class="overlay-box">
-        <h2 class="overlay-heading">Company Announcement</h2>
-        <div class="aspect-video w-full">
-          <iframe
-            class="w-full h-full"
-            :src="announcements[0].videoUrl"
-            frameborder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowfullscreen
-          ></iframe>
-        </div>
-        <button @click="toggleAnnouncements" class="close-btn">Close</button>
-      </div>
-    </div>
-
-    <!-- Tasks Overlay -->
-    <div
-      v-if="showTasksOverlay"
-      class="overlay-container"
-    >
-      <div class="overlay-box max-w-md">
-        <h2 class="overlay-heading">Tasks</h2>
-        <ul class="text-white space-y-2">
-          <li v-for="(task, index) in tasks" :key="index" class="flex items-start">
-            <span class="mr-2">•</span>
-            <span>{{ task }}</span>
-          </li>
-        </ul>
-        <button @click="toggleTasks" class="close-btn">Close</button>
-      </div>
-    </div>
-  </main>
 </template>
 
 <style>
