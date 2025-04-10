@@ -123,10 +123,7 @@ const addCustomer = () => {
             />
 
             <!-- Dropdown menu -->
-            <ul
-              v-if="showDropdown && results.length > 0"
-              class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded shadow max-h-60 overflow-y-auto"
-            >
+            <ul v-if="showDropdown && results.length > 0" class="dropdown">
               <li
                 v-for="customer in results"
                 :key="customer.id"
@@ -218,36 +215,26 @@ body {
 </style>
 
 <style scoped>
-/* Remove any spacing that might affect the positioning */
+/* Layout adjustments */
 main {
   padding: 0;
   margin: 0;
 }
 
-/* Search styles from CodePen example */
+/* Search container setup */
 .search-container {
   position: relative;
   width: 100%;
 }
 
-.search-icon {
-  position: absolute;
-  top: 50%;
-  left: 10px;
-  transform: translateY(-50%);
-  width: 24px;
-  height: 24px;
-  fill: #9ca3af; /* gray-400 */
-  pointer-events: none;
-}
-
+/* Input field styling */
 .search-input {
   width: 100%;
   padding: 10px 10px 10px 40px;
   font-size: 16px;
-  color: #f3f4f6; /* gray-100 */
-  background-color: #374151; /* gray-700 */
-  border: 2px solid #4b5563; /* gray-600 */
+  color: #f3f4f6; /* light text */
+  background-color: #374151; /* dark gray */
+  border: 2px solid #4b5563; /* medium gray */
   border-radius: 6px;
   transition: all 0.3s;
 }
@@ -259,17 +246,53 @@ main {
 }
 
 .search-input::placeholder {
-  color: #9ca3af; /* gray-400 */
+  color: #9ca3af; /* placeholder gray */
 }
 
-/* Fixed positioning for the cabutton class - moved higher on page */
+/* Dropdown styles */
+ul.dropdown {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  position: absolute;
+  min-width: 20%;
+  max-width: 100%;
+  box-sizing: border-box;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.2);
+  z-index: 10;
+  max-height: 200px; /* reduce height */
+  overflow-y: auto;
+}
+
+.dropdown li {
+  padding: 6px 10px; /* reduce vertical spacing */
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+  color: black;
+  transition: background-color 0.2s;
+  font-size: 14px; /* smaller text */
+  line-height: 1.3;
+}
+
+.dropdown li:hover {
+  background-color: #f0f0f0;
+}
+
+.dropdown li:last-child {
+  border-bottom: none;
+}
+
+/* Sidebar button: Company Announcement */
 .cabutton {
   position: absolute;
-  top: 80px; /* Moved higher from the top */
+  top: 80px;
   left: 0;
   width: 6rem;
   height: 4rem;
-  background-color: #facc15; /* yellow-400 equivalent */
+  background-color: #facc15;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -277,10 +300,10 @@ main {
   z-index: 10;
 }
 
-/* Style for the tasks button - positioned directly below the cabutton */
+/* Sidebar button: Tasks */
 .tasks-button {
   position: absolute;
-  top: 160px; /* 20px (top of first button) + 4rem (height of first button) */
+  top: 160px;
   left: 0;
   width: 6rem;
   height: 4rem;
@@ -294,5 +317,10 @@ main {
 
 .sidebuttons {
   align-items: center;
+}
+
+.dropdown-item div {
+  margin: 0;
+  padding: 0;
 }
 </style>
