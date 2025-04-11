@@ -33,7 +33,7 @@ const handleLogin = async () => {
     alert(`Welcome ${res.data.user.username}`);
     setUser(res.data.user);
     console.log("Logged in user:", res.data.user);
-    router.push({ name: "emp_home" });
+    router.push({ name: "home" });
   } catch (err) {
     if (err.response?.status === 401) {
       errorMessage.value = "Invalid username or password.";

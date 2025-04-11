@@ -221,6 +221,9 @@ def search_customers():
     if not query:
         return jsonify([])
 
+    # Add wildcards to the search pattern
+    search_pattern = f"%{query}%"
+    
     sql = """
     SELECT CustomerID, FirstName, MiddleName, LastName, Email1, Phone1
     FROM Customer
@@ -230,26 +233,49 @@ def search_customers():
         MiddleName LIKE %s OR 
         Email1 LIKE %s OR 
         Phone1 LIKE %s OR 
-        CustomerID LIKE %s
+        CAST(CustomerID AS CHAR) LIKE %s
     LIMIT 10
     """
-    cursor.execute(sql, (
-        f"%{query}%", f"%{query}%", f"%{query}%",
-        f"%{query}%", f"%{query}%", f"%{query}%"
-    ))
-    rows = cursor.fetchall()
-
-    customers = [
-        {
-        "id": row["CustomerID"],
-        "name": f"{row['FirstName']} {row['MiddleName'] or ''} {row['LastName']}".strip(),
-        "email": row["Email1"],
-        "phone": row["Phone1"]
-        }
-        for row in rows
-    ]
-    return jsonify(customers)
-
+    
+    try:
+        cursor.execute(sql, (
+            search_pattern, search_pattern, search_pattern,
+            search_pattern, search_pattern, search_pattern
+        ))
+        
+        rows = cursor.fetchall()
+        
+        # Handle empty rows case
+        if not rows:
+            return jsonify([])
+        
+        customers = []
+        for row in rows:
+            # Check if keys exist before accessing them
+            customer_id = row.get("CustomerID", "")
+            first_name = row.get("FirstName", "")
+            middle_name = row.get("MiddleName", "")
+            last_name = row.get("LastName", "")
+            email = row.get("Email1", "")
+            phone = row.get("Phone1", "")
+            
+            # Handle None values
+            middle_name = middle_name or ""
+            
+            customers.append({
+                "id": customer_id,
+                "name": f"{first_name} {middle_name} {last_name}".strip(),
+                "email": email or "",
+                "phone": phone or ""
+            })
+            
+        return jsonify(customers)
+        
+    except Exception as e:
+        # Log the error
+        print(f"Error in customer search: {str(e)}")
+        # Return a more helpful error message (in development)
+        return jsonify({"error": "An error occurred while searching for customers", "details": str(e)}), 500
 
 # POST API for login
 @application.route('/api/login', methods=['POST'])
