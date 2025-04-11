@@ -4,9 +4,9 @@
       <h3>Add Task</h3>
 
       <div class="customer-info">
-      <p><strong>Customer:</strong> {{ props.customerName }}</p>
-      <p><strong>Customer ID:</strong> {{ props.customerId }}</p>
-      <p><strong>Created By:</strong> {{ props.createdByName }}</p>
+        <p><strong>Customer:</strong> {{ props.customerName }}</p>
+        <p><strong>Customer ID:</strong> {{ props.customerId }}</p>
+        <p><strong>Created By:</strong> {{ props.createdByName }}</p>
 
       </div>
 
@@ -66,6 +66,7 @@ const props = defineProps({
   createdByName: String,
   representatives: Array
 })
+
 
 const task = ref({
   assignedRep: props.createdByRep,
