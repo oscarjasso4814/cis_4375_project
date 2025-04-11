@@ -39,7 +39,8 @@ import TaskOverlay from '../components/TaskOverlay.vue';
   flex-direction: column;
   min-height: 100vh;
   background-color: #f9f9f9;
-  margin-top: 50px; /* Adjust this value to match the navbar height */
+  margin-top: 60px; /* Matches the navbar height */
+  color: #000; /* Set default text color to black */
 }
 
 .main-content {
@@ -72,6 +73,7 @@ import TaskOverlay from '../components/TaskOverlay.vue';
   overflow: hidden; /* Ensures content stays within the box */
   word-wrap: break-word; /* Ensures long text wraps within the box */
   overflow-y: auto; /* Adds scrollbars if content overflows vertically */
+  color: #000; /* Ensure text inside boxes is black */
 }
 
 .box-1 {

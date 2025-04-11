@@ -167,7 +167,7 @@ body {
 .search-heading {
   font-size: 1.25rem;
   font-weight: bold;
-  color: white;
+  color: rgb(0, 0, 0);
   margin-bottom: 1rem;
 }
 

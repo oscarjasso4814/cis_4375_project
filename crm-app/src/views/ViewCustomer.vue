@@ -1,395 +1,100 @@
-
-<!-- CustomerProfile.vue -->
-<template>
-  <!-- Full page layout -->
-  <div class="profile-container">
-    <!-- Header with customer name and quick actions -->
-    <header class="profile-header">
-      <div class="customer-title">
-        <h1>{{ customer.name }}</h1>
-        <span class="customer-id">ID: {{ customer.id }}</span>
-        <span class="badge" :class="customer.status.toLowerCase()">{{ customer.status }}</span>
-        <span class="badge sub-status" v-if="customer.subStatus !== 'None'">{{ customer.subStatus }}</span>
-      </div>
-      <div class="quick-actions">
-        <button class="icon-btn" title="Print Profile" @click="printProfile">
-          <i class="fas fa-print"></i>
-        </button>
-        <button class="icon-btn" title="Video Call" @click="startVideoCall">
-          <i class="fas fa-video"></i>
-        </button>
-      </div>
-    </header>
-
-    <!-- Main Layout -->
-    <div class="profile-layout">
-      <!-- Left Sidebar - Customer Info -->
-      <div class="sidebar left-sidebar">
-        <div class="sidebar-panel customer-panel">
-          <h3>Customer Information</h3>
-          <div class="customer-summary">
-            <div class="info-section">
-              <h4>Contact</h4>
-              <div class="info-item">
-                <i class="fas fa-mobile-alt"></i>
-                <span>{{ customer.cell }}</span>
-              </div>
-              <div class="info-item">
-                <i class="fas fa-envelope"></i>
-                <span>{{ customer.email }}</span>
-              </div>
-            </div>
-            
-            <div class="info-section">
-              <h4>Address</h4>
-              <div class="info-item">
-                <i class="fas fa-map-marker-alt"></i>
-                <address>
-                  {{ customer.address.street }}<br>
-                  {{ customer.address.city }}, {{ customer.address.state }} {{ customer.address.zip }}
-                </address>
-              </div>
-            </div>
-            
-            <div class="info-section">
-              <h4>Personal Details</h4>
-              <div class="info-item">
-                <i class="fas fa-birthday-cake"></i>
-                <span>DOB: {{ customer.dob }}</span>
-              </div>
-              <div class="info-item">
-                <i class="fas fa-user"></i>
-                <span>{{ customer.gender }}, {{ customer.maritalStatus }}</span>
-              </div>
-              <div class="info-item">
-                <i class="fas fa-id-card"></i>
-                <span>SSN: {{ customer.ssnTaxId }}</span>
-              </div>
-            </div>
-            
-            <div class="info-section">
-              <h4>Account Details</h4>
-              <div class="info-item">
-                <i class="fas fa-users"></i>
-                <span>Type: {{ customer.customerType }}</span>
-              </div>
-              <div class="info-item">
-                <i class="fas fa-user-tie"></i>
-                <span>Agent: {{ customer.agentOfRecord }}</span>
-              </div>
-              <div class="info-item">
-                <i class="fas fa-calendar-alt"></i>
-                <span>Added: {{ customer.dateAdded }}</span>
-              </div>
-            </div>
-            
-            <div class="info-section">
-              <h4>Household</h4>
-              <div class="info-item">
-                <i class="fas fa-home"></i>
-                <span>Size: {{ customer.householdSize }}</span>
-              </div>
-              <div class="info-item">
-                <i class="fas fa-dollar-sign"></i>
-                <span>Income: {{ customer.householdIncome }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Middle Content - Policy Information -->
-      <div class="main-content">
-        <!-- Insurance Type Tabs -->
-        <div class="insurance-tabs">
-          <button 
-            v-for="type in insuranceTypes" 
-            :key="type.value"
-            class="tab-btn" 
-            :class="{ active: activeInsuranceType === type.value }" 
-            @click="activeInsuranceType = type.value"
-          >
-            <i :class="type.icon"></i>
-            {{ type.label }}
-          </button>
-        </div>
-
-        <!-- Policy Content Area -->
-        <div class="policy-content">
-          <div class="policy-header">
-            <h3>{{ activeInsuranceType }} Insurance Policies</h3>
-            <button class="add-policy-btn" @click="addNewPolicy">
-              <i class="fas fa-plus"></i> Add Policy
-            </button>
-          </div>
-          
-          <div class="policy-list">
-            <template v-if="getPolicies(activeInsuranceType).length > 0">
-              <div v-for="policy in getPolicies(activeInsuranceType)" :key="policy.id" class="policy-card">
-                <div class="policy-card-header">
-                  <h4>{{ policy.name }}</h4>
-                  <span class="policy-number">{{ policy.number }}</span>
-                </div>
-                <div class="policy-card-body">
-                  <div class="policy-detail">
-                    <span class="detail-label">Coverage:</span>
-                    <span class="detail-value">{{ policy.coverage }}</span>
-                  </div>
-                  <div class="policy-detail">
-                    <span class="detail-label">Premium:</span>
-                    <span class="detail-value">{{ policy.premium }}</span>
-                  </div>
-                  <div class="policy-detail">
-                    <span class="detail-label">Start Date:</span>
-                    <span class="detail-value">{{ policy.startDate }}</span>
-                  </div>
-                  <div class="policy-detail" v-if="policy.beneficiary">
-                    <span class="detail-label">Beneficiary:</span>
-                    <span class="detail-value">{{ policy.beneficiary }}</span>
-                  </div>
-                </div>
-                <div class="policy-card-footer">
-                  <button class="small-btn">View Details</button>
-                  <button class="small-btn">Edit</button>
-                </div>
-              </div>
-            </template>
-            <div v-else class="no-policies">
-              <div class="empty-state">
-                <i class="fas fa-folder-open"></i>
-                <p>No {{ activeInsuranceType }} policies found</p>
-                <button class="add-policy-btn" @click="addNewPolicy">
-                  <i class="fas fa-plus"></i> Add New Policy
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Right Sidebar - Action Items -->
-      <div class="sidebar right-sidebar">
-        <div class="sidebar-panel action-panel">
-          <h3>Actions</h3>
-          <div class="action-list">
-            <button class="action-btn" @click="addNewPolicy">
-              <i class="fas fa-file-medical"></i>
-              <span>New Policy</span>
-            </button>
-            <button class="action-btn" @click="addNote">
-              <i class="fas fa-sticky-note"></i>
-              <span>Add Note</span>
-            </button>
-            <button class="action-btn" @click="openACORDForms">
-              <i class="fas fa-file-alt"></i>
-              <span>ACORD Forms</span>
-            </button>
-            <button class="action-btn" @click="sendThankYouLetter">
-              <i class="fas fa-envelope-open-text"></i>
-              <span>Thank You</span>
-            </button>
-            <button class="action-btn" @click="addChangeRequest">
-              <i class="fas fa-exchange-alt"></i>
-              <span>Change Request</span>
-            </button>
-            <button class="action-btn" @click="openMailingServices">
-              <i class="fas fa-mail-bulk"></i>
-              <span>Mailing</span>
-            </button>
-          </div>
-        </div>
-        
-        <div class="sidebar-panel recent-panel">
-          <h3>Recent Activity</h3>
-          <div class="activity-list">
-            <div class="activity-item">
-              <div class="activity-icon"><i class="fas fa-file-alt"></i></div>
-              <div class="activity-content">
-                <div class="activity-title">Policy Updated</div>
-                <div class="activity-desc">Life insurance coverage increased</div>
-                <div class="activity-time">2 days ago</div>
-              </div>
-            </div>
-            <div class="activity-item">
-              <div class="activity-icon"><i class="fas fa-phone"></i></div>
-              <div class="activity-content">
-                <div class="activity-title">Phone Call</div>
-                <div class="activity-desc">Discussed policy options</div>
-                <div class="activity-time">1 week ago</div>
-              </div>
-            </div>
-            <div class="activity-item">
-              <div class="activity-icon"><i class="fas fa-envelope"></i></div>
-              <div class="activity-content">
-                <div class="activity-title">Email Sent</div>
-                <div class="activity-desc">Quote for new home policy</div>
-                <div class="activity-time">Mar 15, 2025</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
 import axios from "axios";
 import { url } from "../api/apiurl";
 
-// Insurance type tabs with icons
-const insuranceTypes = [
-  { label: 'Life', value: 'LIFE', icon: 'fas fa-heartbeat' },
-  { label: 'Health', value: 'Health', icon: 'fas fa-medkit' },
-  { label: 'Medicare', value: 'Medicare', icon: 'fas fa-hospital' },
-  { label: 'Auto', value: 'Auto', icon: 'fas fa-car' },
-  { label: 'Home', value: 'HOME', icon: 'fas fa-home' },
-  { label: 'Other', value: 'Other', icon: 'fas fa-umbrella' }
-];
-
-// Customer data (keeping the same data from your original component)
 const customer = reactive({
   name: 'John Doe',
-  address: {
-    street: '13135 Dairy Ashford Rd',
-    city: 'Sugar Land',
-    state: 'TX',
-    zip: '77478'
-  },
-  addressVerified: true,
-  mailingAddress: '',
-  email: 'john.doe@example.com',
-  email2: '',
   cell: '(555) 123-4567',
-  phone2: '',
-  phone3: '',
-  phone4: '',
-  language: 'English',
-  preferredContact: 'Email',
-  ssnTaxId: '***-**-0000',
-  maritalStatus: 'Single',
-  gender: 'Male',
-  id: '173565915',
-  customerType: 'Personal Lines',
-  accountType: 'Prospect',
-  status: 'Active',
-  subStatus: 'None',
-  agentOfRecord: 'Amin Lalani',
-  csr: 'Amin Lalani',
-  keyedBy: 'Amin Lalani',
-  office: 'Main Office',
-  source: 'Personal Contacts',
-  subSource: '',
-  dateAdded: 'Thu Feb 06, 2025',
-  dob: '01/15/1980',
-  dl: '',
-  dlState: '',
-  dateLicensed: '',
-  householdSize: '3',
-  peopleApplying: '1',
-  householdIncome: '$85,000',
-  preferences: {
-    'Do Not Email': 'No',
-    'Do Not Text': 'No',
-    'Do Not Call': 'No',
-    'Do Not Mail': 'No',
-    'Do Not Market': 'No',
-    'Do Not Capture Email': 'No'
+  phone2: '(555) 987-6543',
+  email: 'john.doe@example.com',
+  email2: 'johndoe@workmail.com',
+  address: {
+    street: '123 Main St',
+    city: 'Springfield',
+    state: 'IL',
+    zip: '62701',
   },
-  relationships: [],
-  tags: []
+  mailingAddress: 'PO Box 456, Springfield, IL 62702',
 });
 
-// Sample policies data
+const householdMembers = reactive([
+  { name: 'Main Member', dob: '01/01/1980', ssn: '***-**-1234', gender: 'Male', relationship: 'Self', expanded: false },
+  { name: '2nd Member', dob: '02/02/1990', ssn: '***-**-5678', gender: 'Female', relationship: 'Spouse', expanded: false },
+  { name: '3rd Member', dob: '03/03/2010', ssn: '0987-11-9012', gender: 'Male', relationship: 'Child', expanded: false },
+]);
+
+const insuranceTypes = [
+  { label: 'Life', value: 'LIFE' },
+  { label: 'Health', value: 'HEALTH' },
+  { label: 'Medicare', value: 'MEDICARE' },
+  { label: 'Home', value: 'HOME' },
+  { label: 'Auto', value: 'AUTO' },
+  { label: 'Others', value: 'OTHERS' },
+];
+
+const activeInsuranceType = ref('LIFE');
+
 const policies = reactive([
   {
     id: 1,
-    type: 'LIFE',
-    name: 'Term Life Insurance',
-    number: 'LF-7832',
-    coverage: '$750,000',
-    premium: '$125/month',
-    startDate: '03/01/2025',
-    beneficiary: 'Jane Doe'
+    companyName: 'ABC Insurance',
+    type: 'Life',
+    planName: 'Term Life Plan',
+    memberId: '12345',
+    dateAdded: '2023-01-01',
+    effectiveDate: '2023-02-01',
+    expirationDate: '2024-01-31',
+    premium: '$100/month',
+    agent: 'John Agent',
+    csr: 'Jane CSR',
   },
-  {
-    id: 2,
-    type: 'LIFE',
-    name: 'Whole Life Policy',
-    number: 'LF-7833',
-    coverage: '$250,000',
-    premium: '$175/month',
-    startDate: '01/15/2025',
-    beneficiary: 'Jane Doe'
-  },
-  {
-    id: 3,
-    type: 'Auto',
-    name: 'Auto Insurance',
-    number: 'AU-5429',
-    coverage: 'Full Coverage',
-    premium: '$98/month',
-    startDate: '02/10/2025'
-  },
-  {
-    id: 4,
-    type: 'HOME',
-    name: 'Homeowners Insurance',
-    number: 'HO-3392',
-    coverage: '$450,000',
-    premium: '$145/month',
-    startDate: '12/20/2024'
-  }
 ]);
 
-// Active insurance type tab
-const activeInsuranceType = ref('LIFE');
+const attachments = reactive([
+  { id: 1, name: 'Policy Document', link: '#', description: 'Life Insurance Policy Document' },
+]);
 
-// Get policies by type
 const getPolicies = (type) => {
-  return policies.filter(policy => policy.type === type);
+  return policies.filter((policy) => policy.type.toUpperCase() === type);
 };
 
-// Action methods
-const printProfile = () => {
-  console.log('Printing customer profile...');
-  // Implementation would go here
+const toggleMemberDetails = (index) => {
+  householdMembers[index].expanded = !householdMembers[index].expanded;
 };
 
-const startVideoCall = () => {
-  console.log('Starting video call...');
-  // Implementation would go here
+let isResizing = false;
+let startY = 0;
+let startHeightPolicy = 0;
+let startHeightNotes = 0;
+
+const startResizing = (event) => {
+  isResizing = true;
+  startY = event.clientY;
+  const policyDisplay = document.querySelector('.policy-display');
+  const notesAttachments = document.querySelector('.notes-attachments');
+  startHeightPolicy = policyDisplay.offsetHeight;
+  startHeightNotes = notesAttachments.offsetHeight;
+
+  document.addEventListener('mousemove', resizeSections);
+  document.addEventListener('mouseup', stopResizing);
 };
 
-const openACORDForms = () => {
-  console.log('Opening ACORD/Custom Forms...');
-  // Implementation would go here
+const resizeSections = (event) => {
+  if (!isResizing) return;
+
+  const deltaY = event.clientY - startY;
+  const policyDisplay = document.querySelector('.policy-display');
+  const notesAttachments = document.querySelector('.notes-attachments');
+
+  policyDisplay.style.height = `${startHeightPolicy + deltaY}px`;
+  notesAttachments.style.height = `${startHeightNotes - deltaY}px`;
 };
 
-const addNewPolicy = () => {
-  console.log('Opening Add New Policy form...');
-  // Implementation would go here
-};
-
-const addNote = () => {
-  console.log('Opening Add Note form...');
-  // Implementation would go here
-};
-
-const sendThankYouLetter = () => {
-  console.log('Opening Thank You Letter template...');
-  // Implementation would go here
-};
-
-const addChangeRequest = () => {
-  console.log('Opening Add Change Request form...');
-  // Implementation would go here
-};
-
-const openMailingServices = () => {
-  console.log('Opening Mailing Services...');
-  // Implementation would go here
+const stopResizing = () => {
+  isResizing = false;
+  document.removeEventListener('mousemove', resizeSections);
+  document.removeEventListener('mouseup', stopResizing);
 };
 
 // Function to fetch and update customer information
@@ -460,561 +165,359 @@ onMounted(async () => {
   console.log('Updated customer profile component mounted');
   // TODO: Update input to a passed prop when page is loaded
   // getCustomer(2) returns the default values
-  getCustomer(2);
+  getCustomer(1);
   // getCustomer(3) tests if error catch works (check console)
   //getCustomer(3);
   // DO NOT run both at the same time; will crash flask
 });
 </script>
 
+<template>
+  <div class="view-customer-container">
+    <!-- Left Panel -->
+    <aside class="left-panel">
+      <header class="panel-header">
+        <h3>Contact</h3>
+        <button class="edit-btn">Edit</button>
+      </header>
+      <div class="contact-info">
+        <p><strong>Name:</strong> {{ customer.name }}</p>
+        <span class="customer-id">ID: {{ customer.id }}</span>
+        <p><strong>Phone 1:</strong> {{ customer.cell }}</p>
+        <p><strong>Phone 2:</strong> {{ customer.phone2 }}</p>
+        <p><strong>Email 1:</strong> {{ customer.email }}</p>
+        <p><strong>Email 2:</strong> {{ customer.email2 }}</p>
+        <p><strong>Physical Address:</strong> {{ customer.address.street }}, {{ customer.address.city }}, {{ customer.address.state }} {{ customer.address.zip }}</p>
+        <p><strong>Mailing Address:</strong> {{ customer.mailingAddress }}</p>
+      </div>
+      <div class="household-members">
+        <h4>Household Members</h4>
+        <ul>
+          <li v-for="(member, index) in householdMembers" :key="index">
+            <button @click="toggleMemberDetails(index)">
+              {{ member.name }}
+              <span v-if="member.expanded">▲</span>
+              <span v-else>▼</span>
+            </button>
+            <div v-if="member.expanded" class="member-details">
+              <p><strong>DOB:</strong> {{ member.dob }}</p>
+              <p><strong>SSN:</strong> {{ member.ssn }}</p>
+              <p><strong>Gender:</strong> {{ member.gender }}</p>
+              <p><strong>Relationship:</strong> {{ member.relationship }}</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- LOB Buttons -->
+      <div class="lob-tabs">
+        <button
+          v-for="type in insuranceTypes"
+          :key="type.value"
+          class="tab-btn"
+          :class="{ active: activeInsuranceType === type.value }"
+          @click="activeInsuranceType = type.value"
+        >
+          {{ type.label }}
+        </button>
+      </div>
+
+      <!-- Resizable Sections -->
+      <div class="resizable-container">
+        <!-- Policy Display Area -->
+        <div class="policy-display resizable-section">
+          <div class="policy-content">
+            <h3>{{ activeInsuranceType }} Policies</h3>
+            <table class="policy-table">
+              <thead>
+                <tr>
+                  <th>Company Name</th>
+                  <th>Type</th>
+                  <th>Plan Name</th>
+                  <th>Member ID</th>
+                  <th>Date Added</th>
+                  <th>Effective Date</th>
+                  <th>Expiration Date</th>
+                  <th>Premium</th>
+                  <th>Agent</th>
+                  <th>CSR</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="policy in getPolicies(activeInsuranceType)" :key="policy.id">
+                  <td>{{ policy.companyName }}</td>
+                  <td>{{ policy.type }}</td>
+                  <td>{{ policy.planName }}</td>
+                  <td>{{ policy.memberId }}</td>
+                  <td>{{ policy.dateAdded }}</td>
+                  <td>{{ policy.effectiveDate }}</td>
+                  <td>{{ policy.expirationDate }}</td>
+                  <td>{{ policy.premium }}</td>
+                  <td>{{ policy.agent }}</td>
+                  <td>{{ policy.csr }}</td>
+                  <td>
+                    <button class="action-btn">Rewrite</button>
+                    <button class="action-btn">Renew</button>
+                    <button class="action-btn">Cancel</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="resizer" @mousedown="startResizing"></div>
+        <!-- Notes & Attachments Section -->
+        <div class="notes-attachments resizable-section">
+          <h3>Notes & Attachments</h3>
+          <textarea placeholder="Add a note..."></textarea>
+          <button class="add-note-btn">Add Note</button>
+          <div class="attachments">
+            <h4>Attachments</h4>
+            <ul>
+              <li v-for="attachment in attachments" :key="attachment.id">
+                <a :href="attachment.link" target="_blank">{{ attachment.name }}</a>
+                <p>{{ attachment.description }}</p>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Right Sidebar -->
+    <aside class="right-sidebar">
+      <h3>Actions</h3>
+      <button class="action-btn">Add Policy</button>
+      <button class="action-btn">Add Task</button>
+      <button class="action-btn">Custom Form 1</button>
+      <button class="action-btn">Custom Form 2</button>
+      <p class="note">Will add policies into the LOB showing</p>
+    </aside>
+  </div>
+</template>
+
 <style scoped>
-/* Base Styles */
-/* Base Styles */
-html, body {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  overflow-x: hidden;
-}
-
-.profile-container {
+.view-customer-container {
   display: flex;
-  flex-direction: column;
-  width: 100%;
+  flex-direction: row;
+  gap: 20px;
+  padding: 20px;
+  background-color: #f4f6f8;
   margin: 0;
-  padding: 0;
-  padding-top: 65px;
-  background-color: #121212;
-  color: #f5f5f5;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-}
-
-/* Header */
-.profile-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 24px;
-  background-color: #1e1e1e;
-  border-bottom: 1px solid #333;
-  height: 60px;
-  width: 100%;
-  margin-top: 65px;
+  height: calc(100vh - 60px); /* Subtract navbar height */
+  margin-top: 60px; /* Push content below the navbar */
   box-sizing: border-box;
+  color: #333;
 }
 
-.customer-title {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.customer-title h1 {
-  font-size: 18px;
-  margin: 0;
-  color: #fff;
-  font-weight: 600;
-}
-
-.customer-id {
-  color: #aaa;
-  font-size: 14px;
-}
-
-.quick-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.icon-btn {
-  background-color: #2d2d2d;
-  border: none;
-  color: #f5f5f5;
-  width: 36px;
-  height: 36px;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.icon-btn:hover {
-  background-color: #444;
-}
-
-/* Badge */
-.badge {
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: 12px;
-  font-size: 12px;
-  background-color: #2b90c5;
-  color: white;
-}
-
-.badge.active {
-  background-color: #2ecc71;
-}
-
-.badge.inactive {
-  background-color: #e74c3c;
-}
-
-.sub-status {
-  background-color: #444;
-}
-
-/* Main Layout */
-.profile-layout {
-  display: flex;
+.left-panel {
+  max-width: 30%;
   flex: 1;
-  width: 100%;
-  overflow: hidden;
-  box-sizing: border-box;
-}
-
-/* Sidebar Styling */
-.sidebar {
-  width: 20%;
-  min-width: 240px;
+  background-color: #ffffff;
+  padding: 20px;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   overflow-y: auto;
-  padding: 16px;
-  background-color: #121212;
-  box-sizing: border-box;
+  color: #333;
 }
 
-.sidebar-panel {
-  background-color: #1e1e1e;
-  border: 1px solid #333;
-  border-radius: 6px;
-  padding: 16px;
-  margin-bottom: 16px;
-}
 
-.sidebar-panel h3 {
-  margin-top: 0;
-  margin-bottom: 16px;
-  font-size: 15px;
-  color: #fff;
-  font-weight: 600;
-}
-
-.sidebar-panel h4 {
-  font-size: 13px;
-  color: #aaa;
-  margin: 10px 0 5px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-weight: 500;
-}
-
-/* Customer Info Panel */
-.customer-panel {
-  height: auto;
-}
-
-.info-section {
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #333;
-}
-
-.info-section:last-child {
-  border-bottom: none;
-  margin-bottom: 0;
-  padding-bottom: 0;
-}
-
-.info-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  margin-bottom: 8px;
-  font-size: 13px;
-  color: #f5f5f5;
-}
-
-.info-item i {
-  width: 16px;
-  color: #aaa;
-}
-
-.info-item address {
-  font-style: normal;
-}
-
-/* Main Content */
-.main-content {
+.right-sidebar {
+  max-width: 13%;
   flex: 1;
+  background-color: #ffffff;
+  padding: 20px;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
+  color: #333;
+}
+
+.main-content {
+  flex: 3;
   display: flex;
   flex-direction: column;
-  padding: 16px;
-  background-color: #121212;
-  min-width: 50%;
-  box-sizing: border-box;
+  overflow-y: auto;
 }
 
-/* Insurance Type Tabs */
-.insurance-tabs {
+.lob-tabs {
   display: flex;
-  gap: 4px;
-  margin-bottom: 16px;
-  background-color: #1e1e1e;
-  padding: 6px;
-  border-radius: 6px;
+  gap: 10px; /* Add spacing between buttons */
+  margin-bottom: 0px; /* Add space below the buttons */
 }
 
 .tab-btn {
-  padding: 8px 16px;
+  flex: 1; /* Make buttons equally wide */
+  padding: 7px; /* Adjust padding to make buttons square */
+  margin: 0 10px; /* Add left and right margins */
   border: none;
-  background-color: transparent;
-  color: #aaa;
+  background-color: #e9ecef;
+  border-radius: 0; /* Remove rounding for square buttons */
   cursor: pointer;
-  font-size: 13px;
-  border-radius: 4px;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.tab-btn i {
-  font-size: 14px;
-}
-
-.tab-btn:hover {
-  background-color: #2d2d2d;
-  color: #fff;
+  transition: background-color 0.3s, color 0.3s;
+  text-align: center; /* Center text inside the button */
 }
 
 .tab-btn.active {
-  background-color: #2d2d2d;
-  color: #fff;
-  font-weight: 500;
+  background-color: #007bff;
+  color: white;
 }
 
-/* Policy Content Area */
-.policy-content {
-  flex: 1;
-  background-color: #1e1e1e;
-  border-radius: 6px;
-  overflow: hidden;
+.tab-btn:hover {
+  background-color: #0056b3;
+  color: white;
+}
+
+.resizable-container {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  border: 1px solid #ddd; /* Add border around the container */
+  border-radius: 10px; /* Rounded corners for the container */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+  background-color: #ffffff; /* White background for the container */
 }
 
-.policy-header {
-  padding: 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid #333;
+.resizable-section {
+  overflow-y: auto;
+  resize: none; /* Prevent native resizing */
+  padding: 15px; /* Add padding inside the sections */
 }
 
-.policy-header h3 {
-  margin: 0;
-  font-size: 16px;
-  color: #fff;
+.policy-display {
+  height: 50%; /* Initial height */
+  transition: height 0.2s ease; /* Smooth resizing */
+  border-bottom: 1px solid #ddd; /* Divider between sections */
+  position: relative; /* Ensure tabs are positioned correctly */
 }
 
-.add-policy-btn {
-  background-color: #2b90c5;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 13px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+.policy-content {
+  margin-top: 0; /* Remove space for tabs */
+  overflow-y: auto;
+  padding: 15px;
+}
+
+.notes-attachments {
+  height: 50%; /* Initial height */
+  transition: height 0.2s ease; /* Smooth resizing */
+}
+
+.resizer {
+  height: 5px;
+  background-color: #ccc;
+  cursor: row-resize;
   transition: background-color 0.2s;
 }
 
-.add-policy-btn:hover {
-  background-color: #1e7eb1;
+.resizer:hover {
+  background-color: #999;
 }
 
-.add-policy-btn i {
-  font-size: 12px;
-}
-
-/* Policy List */
-.policy-list {
-  flex: 1;
-  padding: 16px;
-  overflow-y: auto;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
-}
-
-.policy-card {
-  background-color: #2d2d2d;
-  border-radius: 6px;
-  overflow: hidden;
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.policy-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.policy-card-header {
-  padding: 12px 16px;
-  background-color: #333;
-  border-bottom: 1px solid #444;
-}
-
-.policy-card-header h4 {
-  margin: 0 0 4px 0;
-  font-size: 14px;
-  color: #fff;
-}
-
-.policy-number {
-  font-size: 12px;
-  color: #aaa;
-}
-
-.policy-card-body {
-  padding: 16px;
-}
-
-.policy-detail {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 8px;
-  font-size: 13px;
-}
-
-.detail-label {
-  color: #aaa;
-}
-
-.detail-value {
-  font-weight: 500;
-}
-
-.policy-card-footer {
-  padding: 12px 16px;
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  border-top: 1px solid #444;
-}
-
-.small-btn {
-  padding: 6px 12px;
-  background-color: transparent;
-  color: #f5f5f5;
-  border: 1px solid #555;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
-  transition: all 0.2s;
-}
-
-.small-btn:hover {
-  background-color: #444;
-}
-
-/* Empty State */
-.no-policies {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
+.policy-table {
   width: 100%;
+  border-collapse: collapse;
+  word-wrap: break-word;
 }
 
-.empty-state {
-  text-align: center;
-  padding: 30px;
+.policy-table th,
+.policy-table td {
+  border: 1px solid #e0e0e0;
+  padding: 10px;
+  text-align: left;
+  color: #333;
 }
 
-.empty-state i {
-  font-size: 48px;
-  color: #555;
-  margin-bottom: 16px;
+.policy-table th {
+  background-color: #f8f9fa;
+  font-weight: bold;
 }
 
-.empty-state p {
-  color: #aaa;
-  margin-bottom: 16px;
+.household-members ul {
+  max-height: 200px;
+  overflow-y: auto;
 }
 
-/* Right Sidebar */
-.right-sidebar {
-  background-color: #121212;
-  width: 20%;
-  min-width: 240px;
+.household-members button {
+  background: none;
+  border: none;
+  color: #007bff;
+  cursor: pointer;
+  font-size: 14px;
+  transition: color 0.3s;
 }
 
-/* Action Items */
-.action-panel {
-  margin-bottom: 16px;
-}
-
-.action-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.household-members button:hover {
+  color: #0056b3;
 }
 
 .action-btn {
+  display: block;
+  width: 100%;
   padding: 12px;
-  background-color: #2d2d2d;
-  color: #f5f5f5;
+  margin-bottom: 10px;
+  background-color: #007bff;
+  color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 5px;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  text-align: left;
-  font-size: 13px;
-  transition: background-color 0.2s;
-}
-
-.action-btn i {
-  width: 16px;
-  text-align: center;
-  color: #2b90c5;
+  white-space: nowrap;
+  transition: background-color 0.3s;
 }
 
 .action-btn:hover {
-  background-color: #3a3a3a;
+  background-color: #0056b3;
 }
 
-/* Recent Activity */
-.activity-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.activity-item {
-  display: flex;
-  gap: 12px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #333;
-}
-
-.activity-item:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.activity-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background-color: #2d2d2d;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #2b90c5;
-}
-
-.activity-content {
-  flex: 1;
-}
-
-.activity-title {
-  font-size: 13px;
-  font-weight: 500;
-  color: #f5f5f5;
-  margin-bottom: 2px;
-}
-
-.activity-desc {
+.note {
+  color: red;
   font-size: 12px;
-  color: #aaa;
-  margin-bottom: 4px;
+  margin-top: 10px;
 }
 
-.activity-time {
-  font-size: 11px;
-  color: #777;
+textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #e0e0e0;
+  border-radius: 5px;
+  resize: none;
+  font-size: 14px;
 }
 
-/* Responsive Layout */
-@media (max-width: 1200px) {
-  .policy-list {
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  }
-  
-  .sidebar {
-    width: 25%;
-  }
+textarea:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
 }
 
-@media (max-width: 992px) {
-  .sidebar {
-    width: 30%;
-    min-width: 200px;
-  }
+.add-note-btn {
+  margin-top: 10px;
+  padding: 10px 15px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
 }
 
-@media (max-width: 768px) {
-  .profile-layout {
-    flex-direction: column;
-  }
-  
-  .sidebar {
-    width: 100%;
-    max-height: none;
-    overflow: visible;
-    padding: 8px 16px;
-    min-width: unset;
-  }
-  
-  .main-content {
-    padding: 8px 16px;
-    min-width: unset;
-  }
-  
-  .policy-list {
-    grid-template-columns: 1fr;
-  }
-  
-  .action-list {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-  }
+.add-note-btn:hover {
+  background-color: #218838;
 }
 
-@media (max-width: 480px) {
-  .profile-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-    height: auto;
-    padding: 12px 16px;
-  }
-  
-  .quick-actions {
-    width: 100%;
-    justify-content: flex-end;
-  }
-  
-  .action-list {
-    grid-template-columns: 1fr;
-  }
-  
-  .insurance-tabs {
-    overflow-x: auto;
-    padding: 4px;
-  }
-  
-  .tab-btn {
-    padding: 8px 12px;
-    white-space: nowrap;
-  }
+.attachments a {
+  color: #007bff;
+  text-decoration: none;
+  transition: color 0.3s;
 }
-</style> 
+
+.attachments a:hover {
+  color: #0056b3;
+}
+</style>

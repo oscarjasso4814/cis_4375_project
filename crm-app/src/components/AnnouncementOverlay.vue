@@ -28,7 +28,7 @@ const videoUrl = "https://www.youtube.com/embed/tMya2WkbQgM";
   padding: 10px;
   border-radius: 8px;
   font-size: 14px;
-  color: #333;
+  color: #000; /* Changed text color to black for better contrast */
 }
 
 .header {
@@ -36,11 +36,13 @@ const videoUrl = "https://www.youtube.com/embed/tMya2WkbQgM";
   font-size: 16px;
   font-weight: bold;
   text-align: center;
+  color: #000; /* Ensure header text is black */
 }
 
 .message {
   margin: 5px 0 0px;
   text-align: center;
+  color: #000; /* Ensure message text is black */
 }
 
 .video-container {
