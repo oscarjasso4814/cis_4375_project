@@ -1,43 +1,61 @@
 <script setup>
-import { RouterLink, RouterView } from "vue-router";
+import { RouterLink, RouterView, useRouter } from "vue-router";
 import HelloWorld from "./components/HelloWorld.vue";
-import { ref, onMounted } from 'vue';
+import { ref, onMounted } from "vue";
+import { user, clearUser } from "./stores/userSession";
+
+const router = useRouter();
+const isLoggedIn = ref(false);
+const username = ref("");
+
+// Check login status on mount
+onMounted(() => {
+  const userData = sessionStorage.getItem("user");
+  if (userData) {
+    const user = JSON.parse(userData);
+    isLoggedIn.value = true;
+    username.value = user.username;
+  }
+});
+
+const handleLogout = () => {
+  clearUser();
+  router.push("/login");
+};
 </script>
 
 <template>
-
-    <nav id="navigation">
-      <RouterLink to="/" class="logo">Lalani Insurance Agency <span>+LIA</span></RouterLink>
-      <ul class="links">
-        <li><RouterLink to="/">Home</RouterLink></li>
-        <li><RouterLink to="/about">About</RouterLink></li>
-        <li class="dropdown">
-          <a href="#" class="trigger-drop">Work<i class="arrow"></i></a>
-          <ul class="drop">
-            <li><RouterLink to="/ex_cust">Ex-Cust</RouterLink></li>
-            <li><RouterLink to="/">Drop2</RouterLink></li>
-            <li><RouterLink to="/">Drop3</RouterLink></li>
-            <li><RouterLink to="/">Drop4</RouterLink></li>
-          </ul>
-        </li>
-        <li class="dropdown">
-          <a href="#" class="trigger-drop">Contact<i class="arrow"></i></a>
-          <ul class="drop">
-            <li><RouterLink to="/contact/email">Email</RouterLink></li>
-            <li><RouterLink to="/contact/phone">Phone</RouterLink></li>
-          </ul>
-        </li>
-        <li><RouterLink to="/login">Login</RouterLink></li>
-      </ul>
-    </nav>
-    
+  <nav id="navigation">
+    <RouterLink to="/" class="logo">Lalani Insurance Agency <span>+LIA</span></RouterLink>
+    <ul class="links">
+      <li><RouterLink to="/">Home</RouterLink></li>
+      <li><RouterLink to="/about">About</RouterLink></li>
+      <li class="dropdown">
+        <a href="#" class="trigger-drop">Work<i class="arrow"></i></a>
+        <ul class="drop">
+          <li><RouterLink to="/ex_cust">Ex-Cust</RouterLink></li>
+          <li><RouterLink to="/">Drop2</RouterLink></li>
+          <li><RouterLink to="/">Drop3</RouterLink></li>
+          <li><RouterLink to="/">Drop4</RouterLink></li>
+        </ul>
+      </li>
+      <li class="dropdown">
+        <a href="#" class="trigger-drop">Contact<i class="arrow"></i></a>
+        <ul class="drop">
+          <li><RouterLink to="/contact/email">Email</RouterLink></li>
+          <li><RouterLink to="/contact/phone">Phone</RouterLink></li>
+        </ul>
+      </li>
+      <li v-if="user"><a href="#" @click.prevent="handleLogout">Logout</a></li>
+      <li v-else><RouterLink to="/login">Login</RouterLink></li>
+    </ul>
+  </nav>
 
   <RouterView />
 </template>
 
 <style scoped>
 /* Base styles */
-
 
 .content-wrapper {
   display: flex;
@@ -197,5 +215,4 @@ import { ref, onMounted } from 'vue';
 }
 
 /* Responsive styles */
-
 </style>

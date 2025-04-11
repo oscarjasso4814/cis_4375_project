@@ -3,6 +3,7 @@ import { ref } from "vue";
 import axios from "axios";
 import { useRouter } from "vue-router";
 import { url } from "../api/apiurl";
+import { setUser } from "../stores/userSession";
 
 const username = ref("");
 const password = ref("");
@@ -30,7 +31,7 @@ const handleLogin = async () => {
 
     // Login successful
     alert(`Welcome ${res.data.user.username}`);
-    sessionStorage.setItem("user", JSON.stringify(res.data.user));
+    setUser(res.data.user);
     console.log("Logged in user:", res.data.user);
     router.push({ name: "emp_home" });
   } catch (err) {
