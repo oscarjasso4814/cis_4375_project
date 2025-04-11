@@ -2,9 +2,12 @@ import flask
 from flask import jsonify
 from flask import request
 from flask_cors import CORS
+from flask_cors import cross_origin
 import mysql.connector
 import credsHelp
 from datetime import datetime, date, timedelta
+#Andrews Import DELETE ME LATER
+import bcrypt
 
 from mysql.connector import Error
 from sqlHelp import create_connection
@@ -23,6 +26,7 @@ cors = CORS()
 application = flask.Flask(__name__) #sets up the application
 application.config["DEBUG"] = True #allow to show errors in browser
 cors.init_app(application)
+@cross_origin()
 
 # Get request to get all task from the task table
 @application.route('/api/tasks', methods=['GET'])
@@ -210,7 +214,7 @@ def get_customer(custid):
     customer = cursor.fetchall()
     return jsonify(customer)
 
-# API for searching customers by name (First, Middle, Last) WIP!
+# API for searching customers by name (First, Middle, Last)
 @application.route('/api/customers/search', methods=['GET'])
 def search_customers():
     query = request.args.get('query', '')
@@ -245,6 +249,42 @@ def search_customers():
         for row in rows
     ]
     return jsonify(customers)
+
+
+# POST API for login
+@application.route('/api/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+
+    if not username or not password:
+        return jsonify({"message": "Username and password are required."}), 400
+
+    sql = "SELECT UserID, Username, Password, RepresentativeID FROM Users WHERE Username = %s"
+    cursor.execute(sql, (username,))
+    user = cursor.fetchone()
+
+    if not user:
+        return jsonify({"message": "Invalid username or password."}), 401
+
+
+    # Compare password hashes
+    is_valid = bcrypt.checkpw(password.encode('utf-8'), user['Password'].encode('utf-8'))
+
+    if not is_valid:
+        return jsonify({"message": "Invalid username or password."}), 401
+
+    return jsonify({
+        "message": "Login successful",
+        "user": {
+            "id": user["UserID"],
+            "username": user["Username"],
+            "representative_id": user["RepresentativeID"]
+        }
+    })
+
+
 
 # API BRAINSTORMING; NOT FINAL
 
