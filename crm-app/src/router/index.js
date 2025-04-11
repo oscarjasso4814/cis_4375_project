@@ -8,48 +8,50 @@ const router = createRouter({
       path: "/",
       name: "home",
       component: HomeView,
+      meta: { requiresAuth: true },
     },
     {
       path: "/about",
       name: "about",
-      // route level code-splitting
-      // this generates a separate chunk (About.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
       component: () => import("../views/AboutView.vue"),
+      meta: { requiresAuth: true },
     },
     {
       path: "/emp_home",
       name: "emp_home",
-      // route level code-splitting
-      // this generates a separate chunk (About.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
-      component: () => import("../views/EmployeeHome.vue"),
+      component: () => import("../components/EmployeeHome.vue"),
+      meta: { requiresAuth: true },
     },
     {
       path: "/ex_cust",
       name: "Ex_Cust",
-      // route level code-splitting
-      // this generates a separate chunk (About.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
       component: () => import("../views/ViewCustomer.vue"),
+      meta: { requiresAuth: true },
     },
     {
-      path: '/AddCustomer',
-      name: 'AddCustomer',
-      // route level code-splitting
-      // this generates a separate chunk (About.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
-      component: () => import('../views/AddCustomer.vue'),
+      path: "/AddCustomer",
+      name: "AddCustomer",
+      component: () => import("../views/AddCustomer.vue"),
+      meta: { requiresAuth: true },
     },
     {
       path: "/login",
       name: "login",
-      // route level code-splitting
-      // this generates a separate chunk (About.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
       component: () => import("../views/Login.vue"),
     },
   ],
+});
+
+//Global route guard
+router.beforeEach((to, from, next) => {
+  const user = JSON.parse(sessionStorage.getItem("user"));
+
+  if (to.meta.requiresAuth && !user) {
+    // Redirect to login if trying to access a protected route
+    next({ name: "login" });
+  } else {
+    next(); // Allow navigation
+  }
 });
 
 export default router;

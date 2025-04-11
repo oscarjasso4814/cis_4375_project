@@ -4,6 +4,8 @@ from flask import request
 from flask_cors import CORS
 import mysql.connector
 import credsHelp
+#Andrews Import DELETE ME LATER
+import bcrypt
 
 from mysql.connector import Error
 from sqlHelp import create_connection
@@ -78,6 +80,47 @@ def search_customers():
         for row in rows
     ]
     return jsonify(customers)
+
+
+# POST API for login
+@application.route('/api/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+
+    if not username or not password:
+        return jsonify({"message": "Username and password are required."}), 400
+
+    sql = "SELECT UserID, Username, Password, RepresentativeID FROM Users WHERE Username = %s"
+    cursor.execute(sql, (username,))
+    user = cursor.fetchone()
+
+    if not user:
+        return jsonify({"message": "Invalid username or password."}), 401
+
+    # Temporary debug test
+    print("User from DB:", user)
+    print("Entered password:", password)
+    print("Stored hash:", user["Password"])
+
+    # Compare password hashes
+    is_valid = bcrypt.checkpw(password.encode('utf-8'), user['Password'].encode('utf-8'))
+    print("Does password match hash?:", is_valid)
+
+    if not is_valid:
+        return jsonify({"message": "Invalid username or password."}), 401
+
+    return jsonify({
+        "message": "Login successful",
+        "user": {
+            "id": user["UserID"],
+            "username": user["Username"],
+            "representative_id": user["RepresentativeID"]
+        }
+    })
+
+
 
 # API BRAINSTORMING; NOT FINAL
 
