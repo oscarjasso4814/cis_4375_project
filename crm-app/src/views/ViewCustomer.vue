@@ -183,10 +183,20 @@
               <i class="fas fa-file-alt"></i>
               <span>ACORD Forms</span>
             </button>
-            <button class="action-btn" @click="sendThankYouLetter">
+            <button class="action-btn" @click="showModal = true">
               <i class="fas fa-envelope-open-text"></i>
-              <span>Thank You</span>
+              <span>Add Task</span>
             </button>
+            <!-- Show modal only if true -->
+            <AddTask
+              v-if="showModal"
+              :customer-id="customer.CustomerID"
+              :customer-name="customer.FirstName + ' ' + customer.LastName"
+              :created-by-rep="loggedInRepId"
+              :created-by-name="loggedInRepName"
+              :representatives="repList"
+              @close="showModal = false"
+              />
             <button class="action-btn" @click="addChangeRequest">
               <i class="fas fa-exchange-alt"></i>
               <span>Change Request</span>
@@ -233,9 +243,12 @@
 </template>
 
 <script setup>
+import AddTask from '@/components/AddTask.vue'
 import { ref, reactive, computed, onMounted } from 'vue';
 import axios from "axios";
 import { url } from "../api/apiurl";
+
+const showModal = ref(false)
 
 // Insurance type tabs with icons
 const insuranceTypes = [

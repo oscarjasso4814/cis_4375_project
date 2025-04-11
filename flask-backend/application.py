@@ -5,6 +5,7 @@ from flask_cors import CORS
 from flask_cors import cross_origin
 import mysql.connector
 import credsHelp
+from datetime import datetime, date, timedelta
 #Andrews Import DELETE ME LATER
 import bcrypt
 
@@ -26,6 +27,172 @@ application = flask.Flask(__name__) #sets up the application
 application.config["DEBUG"] = True #allow to show errors in browser
 cors.init_app(application)
 @cross_origin()
+
+# Get request to get all task from the task table
+@application.route('/api/tasks', methods=['GET'])
+def get_tasks():
+    sql = """
+        SELECT 
+            t.TaskID,
+            t.TaskDescription,
+            t.TaskPriority,
+            t.TaskStatus,
+            t.TaskDueDate,
+            t.TaskTime,
+            t.TaskType,
+            t.TaskIsReviewRequired,
+            t.DateCreated,
+            t.CustomerID,
+            t.AssignedRepresentativeID,
+            t.CreatedByRepresentativeID,
+            c.FirstName AS CustomerFirstName,
+            c.LastName AS CustomerLastName,
+            r.FirstName AS AssignedFirstName,
+            r.LastName AS AssignedLastName
+        FROM Task t
+        LEFT JOIN Customer c ON t.CustomerID = c.CustomerID
+        LEFT JOIN Representative r ON t.AssignedRepresentativeID = r.RepresentativeID
+    """
+    cursor.execute(sql)
+    rows = cursor.fetchall()
+
+    def convert(val):
+        if isinstance(val, (datetime, date, timedelta)):
+            return str(val)
+        return val
+
+    # Convert non-serializable values in each dict
+    result = [
+        {key: convert(value) for key, value in row.items()}
+        for row in rows
+    ]
+
+    return jsonify(result)
+
+# Get API request to get a single Task
+@application.route('/api/tasks/<int:task_id>', methods=['GET'])
+def get_task_by_id(task_id):
+    sql = """
+        SELECT 
+            t.TaskID,
+            t.TaskDescription,
+            t.TaskPriority,
+            t.TaskStatus,
+            t.TaskDueDate,
+            t.TaskTime,
+            t.TaskType,
+            t.TaskIsReviewRequired,
+            t.DateCreated,
+            t.CustomerID,
+            t.AssignedRepresentativeID,
+            t.CreatedByRepresentativeID,
+            c.FirstName AS CustomerFirstName,
+            c.LastName AS CustomerLastName,
+            r.FirstName AS AssignedFirstName,
+            r.LastName AS AssignedLastName
+        FROM Task t
+        LEFT JOIN Customer c ON t.CustomerID = c.CustomerID
+        LEFT JOIN Representative r ON t.AssignedRepresentativeID = r.RepresentativeID
+        WHERE t.TaskID = %s
+    """
+    cursor.execute(sql, (task_id,))
+    row = cursor.fetchone()
+
+    def convert(val):
+        if isinstance(val, (datetime, date, timedelta)):
+            return str(val)
+        return val
+
+    if row:
+        result = {key: convert(val) for key, val in row.items()}
+        return jsonify(result)
+    else:
+        return jsonify({'message': 'Task not found'}), 404
+    
+from flask import request
+
+# Post API Call to add a Task
+@application.route('/api/tasks', methods=['POST'])
+def create_task():
+    data = request.get_json()
+    cursor = conn.cursor()
+
+    sql = """
+        INSERT INTO Task (
+            CustomerID, AssignedRepresentativeID, CreatedByRepresentativeID,
+            CustomerName, DateCreated, TaskType, TaskIsReviewRequired,
+            TaskDueDate, TaskTime, TaskPriority, TaskStatus, TaskDescription
+        )
+        VALUES (%s, %s, %s, %s, NOW(), %s, %s, %s, %s, %s, %s, %s)
+    """
+
+    values = (
+        data['CustomerID'],
+        data['AssignedRepresentativeID'],
+        data['CreatedByRepresentativeID'],
+        data['CustomerName'],
+        data['TaskType'],
+        data['TaskIsReviewRequired'],
+        data['TaskDueDate'],
+        data['TaskTime'],
+        data['TaskPriority'],
+        data['TaskStatus'],
+        data['TaskDescription']
+    )
+
+    cursor.execute(sql, values)
+    conn.commit()
+
+    return jsonify({'message': 'Task created successfully'}), 201
+
+
+# PUT API call to update a task
+@application.route('/api/tasks/<int:task_id>', methods=['PUT'])
+def update_task(task_id):
+    data = request.get_json()
+
+    sql = """
+        UPDATE Task SET
+            CustomerID = %s,
+            AssignedRepresentativeID = %s,
+            CreatedByRepresentativeID = %s,
+            CustomerName = %s,
+            TaskType = %s,
+            TaskIsReviewRequired = %s,
+            TaskDueDate = %s,
+            TaskTime = %s,
+            TaskPriority = %s,
+            TaskStatus = %s,
+            TaskDescription = %s
+        WHERE TaskID = %s
+    """
+    values = (
+        data['CustomerID'],
+        data['AssignedRepresentativeID'],
+        data['CreatedByRepresentativeID'],
+        data['CustomerName'],
+        data['TaskType'],
+        data['TaskIsReviewRequired'],
+        data['TaskDueDate'],
+        data['TaskTime'],
+        data['TaskPriority'],
+        data['TaskStatus'],
+        data['TaskDescription'],
+        task_id
+    )
+
+    cursor.execute(sql, values)
+    conn.commit()
+    return jsonify({'message': 'Task updated successfully'})
+
+# Delete API to delete a task
+@application.route('/api/tasks/<int:task_id>', methods=['DELETE'])
+def delete_task(task_id):
+    sql = "DELETE FROM Task WHERE TaskID = %s"
+    cursor.execute(sql, (task_id,))
+    conn.commit()
+    return jsonify({'message': 'Task deleted successfully'})
+
 
 # GET API for getting a representative's name
 @application.route('/api/rep/<repid>/name', methods=['GET'])
