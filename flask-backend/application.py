@@ -215,6 +215,8 @@ def get_customer(custid):
     return jsonify(customer)
 
 # API for searching customers by name (First, Middle, Last)
+# This is the enhanced search endpoint for the flask backend application.py
+
 @application.route('/api/customers/search', methods=['GET'])
 def search_customers():
     query = request.args.get('query', '')
@@ -225,15 +227,26 @@ def search_customers():
     search_pattern = f"%{query}%"
     
     sql = """
-    SELECT CustomerID, FirstName, MiddleName, LastName, Email1, Phone1
-    FROM Customer
+    SELECT 
+        c.CustomerID, 
+        c.FirstName, 
+        c.MiddleName, 
+        c.LastName, 
+        c.Email1, 
+        c.Phone1,
+        c.DateOfBirth,
+        c.DateAdded,
+        r.FirstName AS AgentFirstName,
+        r.LastName AS AgentLastName
+    FROM Customer c
+    LEFT JOIN Representative r ON c.AgentRecordID = r.RepresentativeID
     WHERE 
-        FirstName LIKE %s OR 
-        LastName LIKE %s OR 
-        MiddleName LIKE %s OR 
-        Email1 LIKE %s OR 
-        Phone1 LIKE %s OR 
-        CAST(CustomerID AS CHAR) LIKE %s
+        c.FirstName LIKE %s OR 
+        c.LastName LIKE %s OR 
+        c.MiddleName LIKE %s OR 
+        c.Email1 LIKE %s OR 
+        c.Phone1 LIKE %s OR 
+        CAST(c.CustomerID AS CHAR) LIKE %s
     LIMIT 10
     """
     
@@ -258,15 +271,31 @@ def search_customers():
             last_name = row.get("LastName", "")
             email = row.get("Email1", "")
             phone = row.get("Phone1", "")
+            dob = row.get("DateOfBirth", "")
+            date_added = row.get("DateAdded", "")
+            agent_first_name = row.get("AgentFirstName", "")
+            agent_last_name = row.get("AgentLastName", "")
             
             # Handle None values
             middle_name = middle_name or ""
+            
+            # Format the agent name
+            agent_name = ""
+            if agent_first_name and agent_last_name:
+                agent_name = f"{agent_first_name} {agent_last_name}"
+            
+            # Format the dates
+            formatted_dob = str(dob) if dob else ""
+            formatted_date_added = str(date_added) if date_added else ""
             
             customers.append({
                 "id": customer_id,
                 "name": f"{first_name} {middle_name} {last_name}".strip(),
                 "email": email or "",
-                "phone": phone or ""
+                "phone": phone or "",
+                "dob": formatted_dob,
+                "dateAdded": formatted_date_added,
+                "agent": agent_name
             })
             
         return jsonify(customers)

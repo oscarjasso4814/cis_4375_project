@@ -1,4 +1,264 @@
-<!-- CustomerProfile.vue -->
+<script setup>
+import AddTask from '@/components/AddTask.vue'
+import { ref, reactive, onMounted, watch } from 'vue';
+import { useRoute } from 'vue-router';
+import axios from "axios";
+import { url } from "../api/apiurl";
+
+const route = useRoute();
+const showModal = ref(false);
+const loggedInRepId = ref(1); // This should be obtained from your user store
+const loggedInRepName = ref("Agent Name"); // This should be obtained from your user store
+const repList = ref([]); // This should be populated with representatives from your DB
+
+// Insurance type tabs with icons
+const insuranceTypes = [
+  { label: 'Life', value: 'LIFE', icon: 'fas fa-heartbeat' },
+  { label: 'Health', value: 'Health', icon: 'fas fa-medkit' },
+  { label: 'Medicare', value: 'Medicare', icon: 'fas fa-hospital' },
+  { label: 'Auto', value: 'Auto', icon: 'fas fa-car' },
+  { label: 'Home', value: 'HOME', icon: 'fas fa-home' },
+  { label: 'Other', value: 'Other', icon: 'fas fa-umbrella' }
+];
+
+// Customer data structure
+const customer = reactive({
+  name: '',
+  address: {
+    street: '',
+    city: '',
+    state: '',
+    zip: ''
+  },
+  addressVerified: false,
+  mailingAddress: '',
+  email: '',
+  email2: '',
+  cell: '',
+  phone2: '',
+  phone3: '',
+  phone4: '',
+  language: '',
+  preferredContact: '',
+  ssnTaxId: '',
+  maritalStatus: '',
+  gender: '',
+  id: '',
+  customerType: '',
+  accountType: '',
+  status: 'Active',
+  subStatus: '',
+  agentOfRecord: '',
+  csr: '',
+  keyedBy: '',
+  office: '',
+  source: '',
+  subSource: '',
+  dateAdded: '',
+  dob: '',
+  dl: '',
+  dlState: '',
+  dateLicensed: '',
+  householdSize: '',
+  peopleApplying: '',
+  householdIncome: '',
+  preferences: {
+    'Do Not Email': 'No',
+    'Do Not Text': 'No',
+    'Do Not Call': 'No',
+    'Do Not Mail': 'No',
+    'Do Not Market': 'No',
+    'Do Not Capture Email': 'No'
+  },
+  relationships: [],
+  tags: [],
+  // Additional fields to match backend data
+  CustomerID: '',
+  FirstName: '',
+  LastName: ''
+});
+
+// Sample policies data
+const policies = reactive([
+  {
+    id: 1,
+    type: 'LIFE',
+    name: 'Term Life Insurance',
+    number: 'LF-7832',
+    coverage: '$750,000',
+    premium: '$125/month',
+    startDate: '03/01/2025',
+    beneficiary: 'Jane Doe'
+  },
+  {
+    id: 2,
+    type: 'LIFE',
+    name: 'Whole Life Policy',
+    number: 'LF-7833',
+    coverage: '$250,000',
+    premium: '$175/month',
+    startDate: '01/15/2025',
+    beneficiary: 'Jane Doe'
+  },
+  {
+    id: 3,
+    type: 'Auto',
+    name: 'Auto Insurance',
+    number: 'AU-5429',
+    coverage: 'Full Coverage',
+    premium: '$98/month',
+    startDate: '02/10/2025'
+  },
+  {
+    id: 4,
+    type: 'HOME',
+    name: 'Homeowners Insurance',
+    number: 'HO-3392',
+    coverage: '$450,000',
+    premium: '$145/month',
+    startDate: '12/20/2024'
+  }
+]);
+
+// Active insurance type tab
+const activeInsuranceType = ref('LIFE');
+
+// Get policies by type
+const getPolicies = (type) => {
+  return policies.filter(policy => policy.type === type);
+};
+
+// Action methods
+const printProfile = () => {
+  console.log('Printing customer profile...');
+  // Implementation would go here
+};
+
+const startVideoCall = () => {
+  console.log('Starting video call...');
+  // Implementation would go here
+};
+
+const openACORDForms = () => {
+  console.log('Opening ACORD/Custom Forms...');
+  // Implementation would go here
+};
+
+const addNewPolicy = () => {
+  console.log('Opening Add New Policy form...');
+  // Implementation would go here
+};
+
+const addNote = () => {
+  console.log('Opening Add Note form...');
+  // Implementation would go here
+};
+
+const addChangeRequest = () => {
+  console.log('Opening Add Change Request form...');
+  // Implementation would go here
+};
+
+const openMailingServices = () => {
+  console.log('Opening Mailing Services...');
+  // Implementation would go here
+};
+
+// Function to fetch and update customer information
+async function getCustomer(custid) {
+  try {
+    const response = await axios.get(`${url}/api/customer/${custid}`);
+    const customerData = response.data[0];
+
+    if (customerData) {
+      // Update the customer object with fetched data
+      customer.CustomerID = customerData.CustomerID || '';
+      customer.FirstName = customerData.FirstName || '';
+      customer.LastName = customerData.LastName || '';
+      customer.name = `${customerData.FirstName} ${customerData.LastName}`.trim() || '';
+      customer.address.street = customerData.Address || '';
+      customer.address.city = customerData.City || '';
+      customer.address.state = customerData.State || '';
+      customer.address.zip = customerData.Zip || '';
+      customer.mailingAddress = customerData.MailingAddress || '';
+      customer.email = customerData.Email1 || '';
+      customer.email2 = customerData.Email2 || '';
+      customer.cell = customerData.Phone1 || '';
+      customer.phone2 = customerData.Phone2 || '';
+      customer.phone3 = customerData.Phone3 || '';
+      customer.phone4 = customerData.BadPhone4 || '';
+      customer.language = customerData.Language || '';
+      customer.preferredContact = customerData.PrefferedContact || '';
+      customer.ssnTaxId = customerData.SocialSecurityNum || '';
+      customer.maritalStatus = customerData.MaritalStatus || '';
+      customer.gender = customerData.Gender || '';
+      customer.id = customerData.CustomerID || '';
+      customer.customerType = customerData.Type || '';
+      customer.accountType = customerData.AccountType || '';
+      customer.status = customerData.ActiveStatus ? 'Active' : 'Inactive';
+      customer.subStatus = customerData.SubsStatus || '';
+      customer.agentOfRecord = customerData.AgentRecordID || '';
+      customer.csr = customerData.RepresentativeID || '';
+      customer.office = customerData.Office || '';
+      customer.source = customerData.Source || '';
+      customer.subSource = customerData.SubSource || '';
+      customer.dateAdded = customerData.DateAdded || '';
+      customer.dob = customerData.DateOfBirth || '';
+      customer.dl = customerData.DriversLicenseNum || '';
+      customer.dlState = customerData.DriversLicenseState || '';
+      customer.householdSize = customerData.HouseholdSize || '';
+      customer.householdIncome = customerData.HouseholdIncome || '';
+
+      customer.preferences = {
+        'Do Not Email': customerData.DoNotEmail ? 'Yes' : 'No',
+        'Do Not Text': customerData.DoNotText ? 'Yes' : 'No',
+        'Do Not Call': customerData.DoNotCall ? 'Yes' : 'No',
+        'Do Not Mail': customerData.UndeliverableMail ? 'Yes' : 'No',
+        'Do Not Market': customerData.DoNotMarket ? 'Yes' : 'No',
+        'Do Not Capture Email': customerData.DoNotCaptureEmail ? 'Yes' : 'No'
+      };
+    } else {
+      throw new Error("No customer data returned");
+    }
+  } catch (error) {
+    console.error('Error fetching customer data:', error);
+  }
+}
+
+// Watch for changes in the route parameter and fetch the customer data
+watch(
+  () => route.params.id,
+  (newId) => {
+    if (newId) {
+      getCustomer(newId);
+    }
+  }
+);
+
+// Lifecycle hook
+onMounted(() => {
+  console.log('Customer profile component mounted');
+  
+  // Get the customer ID from the route params
+  const customerId = route.params.id;
+  
+  // If no ID in route, use a default
+  if (customerId) {
+    getCustomer(customerId);
+  } else {
+    // Use a default ID for the ex_cust route
+    getCustomer(2);
+  }
+  
+  // Fetch representatives for the AddTask component
+  // This should be implemented to fetch actual representatives from your database
+  repList.value = [
+    { RepresentativeID: 1, FirstName: 'Amin', LastName: 'Lalani' },
+    { RepresentativeID: 2, FirstName: 'John', LastName: 'Doe' }
+  ];
+});
+</script>
+
 <template>
   <!-- Full page layout -->
   <div class="profile-container">
@@ -242,245 +502,7 @@
   </div>
 </template>
 
-<script setup>
-import AddTask from '@/components/AddTask.vue'
-import { ref, reactive, computed, onMounted } from 'vue';
-import axios from "axios";
-import { url } from "../api/apiurl";
-
-const showModal = ref(false)
-
-// Insurance type tabs with icons
-const insuranceTypes = [
-  { label: 'Life', value: 'LIFE', icon: 'fas fa-heartbeat' },
-  { label: 'Health', value: 'Health', icon: 'fas fa-medkit' },
-  { label: 'Medicare', value: 'Medicare', icon: 'fas fa-hospital' },
-  { label: 'Auto', value: 'Auto', icon: 'fas fa-car' },
-  { label: 'Home', value: 'HOME', icon: 'fas fa-home' },
-  { label: 'Other', value: 'Other', icon: 'fas fa-umbrella' }
-];
-
-// Customer data (keeping the same data from your original component)
-const customer = reactive({
-  name: 'John Doe',
-  address: {
-    street: '13135 Dairy Ashford Rd',
-    city: 'Sugar Land',
-    state: 'TX',
-    zip: '77478'
-  },
-  addressVerified: true,
-  mailingAddress: '',
-  email: 'john.doe@example.com',
-  email2: '',
-  cell: '(555) 123-4567',
-  phone2: '',
-  phone3: '',
-  phone4: '',
-  language: 'English',
-  preferredContact: 'Email',
-  ssnTaxId: '***-**-0000',
-  maritalStatus: 'Single',
-  gender: 'Male',
-  id: '173565915',
-  customerType: 'Personal Lines',
-  accountType: 'Prospect',
-  status: 'Active',
-  subStatus: 'None',
-  agentOfRecord: 'Amin Lalani',
-  csr: 'Amin Lalani',
-  keyedBy: 'Amin Lalani',
-  office: 'Main Office',
-  source: 'Personal Contacts',
-  subSource: '',
-  dateAdded: 'Thu Feb 06, 2025',
-  dob: '01/15/1980',
-  dl: '',
-  dlState: '',
-  dateLicensed: '',
-  householdSize: '3',
-  peopleApplying: '1',
-  householdIncome: '$85,000',
-  preferences: {
-    'Do Not Email': 'No',
-    'Do Not Text': 'No',
-    'Do Not Call': 'No',
-    'Do Not Mail': 'No',
-    'Do Not Market': 'No',
-    'Do Not Capture Email': 'No'
-  },
-  relationships: [],
-  tags: []
-});
-
-// Sample policies data
-const policies = reactive([
-  {
-    id: 1,
-    type: 'LIFE',
-    name: 'Term Life Insurance',
-    number: 'LF-7832',
-    coverage: '$750,000',
-    premium: '$125/month',
-    startDate: '03/01/2025',
-    beneficiary: 'Jane Doe'
-  },
-  {
-    id: 2,
-    type: 'LIFE',
-    name: 'Whole Life Policy',
-    number: 'LF-7833',
-    coverage: '$250,000',
-    premium: '$175/month',
-    startDate: '01/15/2025',
-    beneficiary: 'Jane Doe'
-  },
-  {
-    id: 3,
-    type: 'Auto',
-    name: 'Auto Insurance',
-    number: 'AU-5429',
-    coverage: 'Full Coverage',
-    premium: '$98/month',
-    startDate: '02/10/2025'
-  },
-  {
-    id: 4,
-    type: 'HOME',
-    name: 'Homeowners Insurance',
-    number: 'HO-3392',
-    coverage: '$450,000',
-    premium: '$145/month',
-    startDate: '12/20/2024'
-  }
-]);
-
-// Active insurance type tab
-const activeInsuranceType = ref('LIFE');
-
-// Get policies by type
-const getPolicies = (type) => {
-  return policies.filter(policy => policy.type === type);
-};
-
-// Action methods
-const printProfile = () => {
-  console.log('Printing customer profile...');
-  // Implementation would go here
-};
-
-const startVideoCall = () => {
-  console.log('Starting video call...');
-  // Implementation would go here
-};
-
-const openACORDForms = () => {
-  console.log('Opening ACORD/Custom Forms...');
-  // Implementation would go here
-};
-
-const addNewPolicy = () => {
-  console.log('Opening Add New Policy form...');
-  // Implementation would go here
-};
-
-const addNote = () => {
-  console.log('Opening Add Note form...');
-  // Implementation would go here
-};
-
-const sendThankYouLetter = () => {
-  console.log('Opening Thank You Letter template...');
-  // Implementation would go here
-};
-
-const addChangeRequest = () => {
-  console.log('Opening Add Change Request form...');
-  // Implementation would go here
-};
-
-const openMailingServices = () => {
-  console.log('Opening Mailing Services...');
-  // Implementation would go here
-};
-
-// Function to fetch and update customer information
-// Generated using ChatGPT:
-// Create a function following this initial layout (getCustomer() in ViewCustomer.vue)
-// but with series of customer.key = customerData.value statements similar to customer.name using the keys from this reactive const (customer in ViewCustomer.vue)
-// and this MySQL table's keys (Customer CREATE TABLE from Create_Database_and_Tables.sql)
-async function getCustomer(custid) {
-  axios.get(url + `/api/customer/${custid}`)
-    .then((response) => {
-      const customerData = response.data[0];
-
-      if (customerData) {
-        customer.name = customerData.FirstName + " " + customerData.LastName || '';
-        customer.address.street = customerData.Address || '';
-        customer.address.city = customerData.City || '';
-        customer.address.state = customerData.State || '';
-        customer.address.zip = customerData.Zip || '';
-        customer.mailingAddress = customerData.MailingAddress || '';
-        customer.email = customerData.Email1 || '';
-        customer.email2 = customerData.Email2 || '';
-        customer.cell = customerData.Phone1 || '';
-        customer.phone2 = customerData.Phone2 || '';
-        customer.phone3 = customerData.Phone3 || '';
-        customer.phone4 = customerData.BadPhone4 || '';
-        customer.language = customerData.Language || '';
-        customer.preferredContact = customerData.PrefferedContact || '';
-        customer.ssnTaxId = customerData.SocialSecurityNum || '';
-        customer.maritalStatus = customerData.MaritalStatus || '';
-        customer.gender = customerData.Gender || '';
-        customer.id = customerData.CustomerID || '';
-        customer.customerType = customerData.Type || '';
-        customer.accountType = customerData.AccountType || '';
-        customer.status = customerData.ActiveStatus ? 'Active' : 'Inactive';
-        customer.subStatus = customerData.SubsStatus || '';
-        customer.agentOfRecord = customerData.AgentRecordID || '';
-        customer.csr = customerData.RepresentativeID || '';
-        customer.office = customerData.Office || '';
-        customer.source = customerData.Source || '';
-        customer.subSource = customerData.SubSource || '';
-        customer.dateAdded = customerData.DateAdded || '';
-        customer.dob = customerData.DateOfBirth || '';
-        customer.dl = customerData.DriversLicenseNum || '';
-        customer.dlState = customerData.DriversLicenseState || '';
-        customer.householdSize = customerData.HouseholdSize || '';
-        customer.householdIncome = customerData.HouseholdIncome || '';
-
-        customer.preferences = {
-          'Do Not Email': customerData.DoNotEmail ? 'Yes' : 'No',
-          'Do Not Text': customerData.DoNotText ? 'Yes' : 'No',
-          'Do Not Call': customerData.DoNotCall ? 'Yes' : 'No',
-          'Do Not Mail': customerData.UndeliverableMail ? 'Yes' : 'No',
-          'Do Not Market': customerData.DoNotMarket ? 'Yes' : 'No',
-          'Do Not Capture Email': customerData.DoNotCaptureEmail ? 'Yes' : 'No'
-        };
-      }
-      else {
-          throw new Error ("No customer data returned");
-      }
-    })
-    .catch((error) => {
-      console.error('Error fetching customer data:', error);
-    });
-}
-
-// Lifecycle hook
-onMounted(async () => {
-  console.log('Updated customer profile component mounted');
-  // TODO: Update input to a passed prop when page is loaded
-  // getCustomer(2) returns the default values
-  getCustomer(2);
-  // getCustomer(3) tests if error catch works (check console)
-  //getCustomer(3);
-  // DO NOT run both at the same time; will crash flask
-});
-</script>
-
 <style scoped>
-/* Base Styles */
 /* Base Styles */
 html, body {
   margin: 0;

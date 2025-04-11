@@ -1,7 +1,7 @@
 <script setup>
-import CustomerSearch from '../components/CustomerSearch.vue';
 import AnnouncementOverlay from '../components/AnnouncementOverlay.vue';
 import TaskOverlay from '../components/TaskOverlay.vue';
+import CustomerSearch from '../components/CustomerSearch.vue';
 </script>
 
 <template>

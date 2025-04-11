@@ -1,234 +1,331 @@
 <script setup>
-import { ref } from "vue";
+import { ref, reactive } from "vue";
+import { useRouter } from "vue-router";
 import axios from "axios";
 import { url } from "../api/apiurl";
-import { RouterLink } from "vue-router";
 
-// Search state
+const router = useRouter();
 const query = ref("");
-const results = ref([]);
-const hasSearched = ref(false);
-const showDropdown = ref(false);
-const selectedCustomerId = ref(null);
+const searchResults = ref([]);
+const isSearching = ref(false);
+const searchError = ref("");
+const showResults = ref(false);
 
 // Search function
 const searchCustomers = async () => {
   if (!query.value.trim()) {
-    results.value = [];
-    hasSearched.value = false;
-    showDropdown.value = false;
+    searchResults.value = [];
+    searchError.value = "";
+    showResults.value = false;
     return;
   }
 
   try {
+    isSearching.value = true;
+    searchError.value = "";
+    
     const res = await axios.get(url + "/api/customers/search", {
       params: { query: query.value },
     });
-    results.value = res.data;
-    hasSearched.value = true;
-    showDropdown.value = true;
+    
+    searchResults.value = res.data;
+    showResults.value = true;
+    
+    // If only one result is found, navigate directly to that customer's profile
+    if (searchResults.value.length === 1) {
+      navigateToCustomerProfile(searchResults.value[0].id);
+    }
+    
   } catch (err) {
     console.error("Error searching customers:", err);
-    results.value = [];
-    hasSearched.value = true;
-    showDropdown.value = false;
+    searchError.value = "An error occurred while searching. Please try again.";
+    searchResults.value = [];
+  } finally {
+    isSearching.value = false;
   }
 };
 
-// Handle selection
-const selectCustomer = (customer) => {
-  query.value = customer.name;
-  selectedCustomerId.value = customer.id;
-  showDropdown.value = false;
-  console.log("Selected customer ID:", customer.id);
+// Navigate to customer profile
+const navigateToCustomerProfile = (customerId) => {
+  router.push({
+    name: "CustomerProfile", 
+    params: { id: customerId }
+  });
 };
 
-// Add customer logic
-const addCustomer = () => {
-  console.log("Add customer button clicked");
+// Add customer function
+const navigateToAddCustomer = () => {
+  router.push({ name: "AddCustomer" });
 };
 </script>
 
 <template>
-  <!-- Centered Search Area -->
-  <div class="search-center">
-    <div class="search-box">
-      <h2 class="search-heading">Search Customers</h2>
-      <div class="flex flex-col md:flex-row items-center gap-4">
-        <!-- Input Box -->
-        <div class="relative w-full">
-          <input
-            v-model="query"
-            @input="searchCustomers"
-            @focus="showDropdown = true"
-            type="text"
-            placeholder="Enter a name..."
-            class="search-input"
-          />
-          <!-- Dropdown Results -->
-          <ul
-            v-if="showDropdown && results.length > 0"
-            class="dropdown-menu"
-          >
-            <li
-              v-for="customer in results"
-              :key="customer.id"
-              @click="selectCustomer(customer)"
-              class="dropdown-item"
-            >
-              <div class="font-semibold">{{ customer.name }}</div>
-              <div class="text-sm text-gray-600">
-                ID: {{ customer.id }} | {{ customer.email }} | {{ customer.phone }}
-              </div>
-            </li>
-          </ul>
-          <p v-if="results.length === 0 && hasSearched" class="no-results">
-            No matching customers found.
-          </p>
-        </div>
-        <!-- Add Customer Button -->
-        <RouterLink
-          to="/AddCustomer"
-          class="add-customer-btn"
-        >
-          + Add Customer
-        </RouterLink>
+  <div class="search-container">
+    <h2 class="search-title">Customer Search</h2>
+    
+    <!-- Search Form -->
+    <div class="search-form">
+      <div class="input-group">
+        <input
+          v-model="query"
+          type="text"
+          placeholder="Search by name, email, phone or ID..."
+          class="search-input"
+          @keyup.enter="searchCustomers"
+        />
+        <button @click="searchCustomers" class="search-button">
+          <i class="fas fa-search"></i> Search
+        </button>
       </div>
+      <button @click="navigateToAddCustomer" class="add-customer-button">
+        <i class="fas fa-plus"></i> Add Customer
+      </button>
+    </div>
+    
+    <!-- Loading Indicator -->
+    <div v-if="isSearching" class="loading-indicator">
+      Searching...
+    </div>
+    
+    <!-- Error Message -->
+    <div v-if="searchError" class="error-message">
+      {{ searchError }}
+    </div>
+    
+    <!-- Search Results Table -->
+    <div v-if="showResults && searchResults.length > 1" class="results-container">
+      <h3 class="results-title">Search Results ({{ searchResults.length }})</h3>
+      
+      <table class="results-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>DOB</th>
+            <th>Agent of Record</th>
+            <th>Date Added</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="customer in searchResults" :key="customer.id" class="result-row">
+            <td>{{ customer.name }}</td>
+            <td>{{ customer.phone }}</td>
+            <td>{{ customer.email }}</td>
+            <td>{{ customer.dob || 'N/A' }}</td>
+            <td>{{ customer.agent || 'N/A' }}</td>
+            <td>{{ customer.dateAdded || 'N/A' }}</td>
+            <td>
+              <button 
+                @click="navigateToCustomerProfile(customer.id)" 
+                class="view-profile-button"
+              >
+                View Profile
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <!-- No Results Message -->
+    <div v-if="showResults && searchResults.length === 0" class="no-results">
+      No customers found matching "{{ query }}". 
+      <button @click="navigateToAddCustomer" class="add-link">
+        Add a new customer?
+      </button>
     </div>
   </div>
 </template>
 
 <style scoped>
-/* Centered Search Section */
-.search-center {
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.search-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-.search-box {
-  width: 100%;
-  max-width: 700px;
-  padding: 2rem;
+.search-title {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: #333;
   text-align: center;
 }
 
-.search-heading {
-  font-size: 1.25rem;
-  font-weight: bold;
-  color: rgb(0, 0, 0);
-  margin-bottom: 1rem;
+.search-form {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.input-group {
+  display: flex;
+  flex: 1;
 }
 
 .search-input {
-  width: 100%;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.375rem;
-  border: 2px solid #4b5563;
-  background-color: #ffffff;
-  color: #000000;
+  flex: 1;
+  padding: 12px 15px;
+  border: 2px solid #ddd;
+  border-radius: 6px 0 0 6px;
   font-size: 16px;
-  outline: none;
-  transition: all 0.3s ease;
+  color: #333;
+  transition: border-color 0.3s;
 }
 
 .search-input:focus {
-  border-color: #facc15;
-  box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.4);
+  border-color: #007bff;
+  outline: none;
 }
 
-.search-input::placeholder {
-  color: #9ca3af;
-}
-
-.dropdown-menu {
-  position: absolute;
-  z-index: 10;
-  margin-top: 0.25rem;
-  width: 100%;
-  background-color: white;
-  border: 1px solid #d1d5db;
-  border-radius: 0.375rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  max-height: 15rem;
-  overflow-y: auto;
-  list-style: none;
-  padding: 0;
-}
-
-.dropdown-item {
-  padding: 0.5rem 1rem;
+.search-button {
+  padding: 12px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 0 6px 6px 0;
+  font-size: 16px;
   cursor: pointer;
-  text-align: left;
+  transition: background-color 0.3s;
 }
 
-.dropdown-item:hover {
-  background-color: #f3f4f6;
+.search-button:hover {
+  background-color: #0069d9;
 }
 
-.font-semibold {
+.add-customer-button {
+  padding: 12px 20px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.3s;
+}
+
+.add-customer-button:hover {
+  background-color: #218838;
+}
+
+.loading-indicator {
+  text-align: center;
+  padding: 15px;
+  font-style: italic;
+  color: #666;
+}
+
+.error-message {
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 10px 15px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.results-container {
+  margin-top: 20px;
+}
+
+.results-title {
+  font-size: 18px;
   font-weight: 600;
+  margin-bottom: 15px;
+  color: #333;
 }
 
-.text-sm {
-  font-size: 0.875rem;
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.text-gray-600 {
-  color: #4b5563;
+.results-table th,
+.results-table td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.results-table th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  color: #333;
+}
+
+.result-row:hover {
+  background-color: #f5f5f5;
+}
+
+.view-profile-button {
+  padding: 6px 12px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.view-profile-button:hover {
+  background-color: #0069d9;
 }
 
 .no-results {
-  margin-top: 0.5rem;
-  color: #9ca3af;
+  text-align: center;
+  padding: 30px;
+  color: #666;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  font-size: 16px;
 }
 
-/* Add Customer Button */
-.add-customer-btn {
-  padding: 0.5rem 1.5rem;
-  background-color: #facc15;
-  color: black;
-  font-weight: bold;
-  border-radius: 0.375rem;
+.add-link {
+  background: none;
+  border: none;
+  color: #007bff;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 16px;
+  margin-left: 5px;
+}
+
+.add-link:hover {
+  color: #0056b3;
   text-decoration: none;
-  transition: background-color 0.2s ease-in-out;
-  display: inline-block;
-  margin-top: 1rem;
 }
 
-.add-customer-btn:hover {
-  background-color: #fbbf24;
-}
-
-/* Flexbox utilities */
-.flex {
-  display: flex;
-}
-
-.flex-col {
-  flex-direction: column;
-}
-
-.items-center {
-  align-items: center;
-}
-
-.gap-4 {
-  gap: 1rem;
-}
-
-.relative {
-  position: relative;
-}
-
-.w-full {
-  width: 100%;
-}
-
-@media (min-width: 768px) {
-  .md\:flex-row {
-    flex-direction: row;
+/* Responsive Design */
+@media (max-width: 768px) {
+  .search-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .search-input {
+    border-radius: 6px 6px 0 0;
+  }
+  
+  .search-button {
+    border-radius: 0 0 6px 6px;
+  }
+  
+  .add-customer-button {
+    margin-top: 10px;
+  }
+  
+  .results-table {
+    display: block;
+    overflow-x: auto;
   }
 }
 </style>
