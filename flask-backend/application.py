@@ -45,7 +45,7 @@ def get_customer(custid):
     customer = cursor.fetchall()
     return jsonify(customer)
 
-# API for searching customers by name (First, Middle, Last) WIP!
+# API for searching customers by name (First, Middle, Last)
 @application.route('/api/customers/search', methods=['GET'])
 def search_customers():
     query = request.args.get('query', '')
@@ -99,14 +99,9 @@ def login():
     if not user:
         return jsonify({"message": "Invalid username or password."}), 401
 
-    # Temporary debug test
-    print("User from DB:", user)
-    print("Entered password:", password)
-    print("Stored hash:", user["Password"])
 
     # Compare password hashes
     is_valid = bcrypt.checkpw(password.encode('utf-8'), user['Password'].encode('utf-8'))
-    print("Does password match hash?:", is_valid)
 
     if not is_valid:
         return jsonify({"message": "Invalid username or password."}), 401
