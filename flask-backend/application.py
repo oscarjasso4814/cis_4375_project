@@ -62,22 +62,25 @@ def search_customers():
         CustomerID LIKE %s
     LIMIT 10
     """
-    cursor.execute(sql, (
-        f"%{query}%", f"%{query}%", f"%{query}%",
-        f"%{query}%", f"%{query}%", f"%{query}%"
-    ))
-    rows = cursor.fetchall()
 
-    customers = [
-        {
-        "id": row["CustomerID"],
-        "name": f"{row['FirstName']} {row['MiddleName'] or ''} {row['LastName']}".strip(),
-        "email": row["Email1"],
-        "phone": row["Phone1"]
-        }
-        for row in rows
-    ]
-    return jsonify(customers)
+    conn = create_connection(myCreds.conString, myCreds.userName, myCreds.password, myCreds.dbName)
+    try:
+        cursor = conn.cursor(dictionary=True)
+        param = f"%{query}%"
+        cursor.execute(sql, (param, param, param, param, param, param))
+        rows = cursor.fetchall()
+        customers = [
+            {
+                "id": row["CustomerID"],
+                "name": f"{row['FirstName']} {row['MiddleName'] or ''} {row['LastName']}".strip(),
+                "email": row["Email1"],
+                "phone": row["Phone1"]
+            } for row in rows
+        ]
+        return jsonify(customers)
+    finally:
+        cursor.close()
+        conn.close()
 
 # API BRAINSTORMING; NOT FINAL
 

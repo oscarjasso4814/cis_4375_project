@@ -10,6 +10,7 @@ def create_connection(host_name, user_name, user_password, db_name):
             password=user_password,
             database=db_name
         )
+        
 #        print('connection successful')
     except Error as e:
         print(f'the error {e} occurred')

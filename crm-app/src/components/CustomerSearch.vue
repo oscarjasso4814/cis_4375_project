@@ -2,21 +2,19 @@
 import { ref } from "vue";
 import axios from "axios";
 import { url } from "../api/apiurl";
+import { useRouter } from "vue-router";
 
-
-// Search state
 const query = ref("");
 const results = ref([]);
 const hasSearched = ref(false);
-const showDropdown = ref(false);
-const selectedCustomerId = ref(null);
+const showResults = ref(false);
+const router = useRouter();
 
-// Search function
 const searchCustomers = async () => {
   if (!query.value.trim()) {
     results.value = [];
     hasSearched.value = false;
-    showDropdown.value = false;
+    showResults.value = false;
     return;
   }
 
@@ -26,82 +24,69 @@ const searchCustomers = async () => {
     });
     results.value = res.data;
     hasSearched.value = true;
-    showDropdown.value = true;
+
+    if (results.value.length === 1) {
+      // Navigate to the customer's profile if only one result is found
+      selectCustomer(results.value[0]);
+    } else {
+      showResults.value = true; // Show results if multiple customers are found
+    }
   } catch (err) {
     console.error("Error searching customers:", err);
     results.value = [];
     hasSearched.value = true;
-    showDropdown.value = false;
+    showResults.value = false;
   }
 };
 
-// Handle selection
 const selectCustomer = (customer) => {
-  query.value = customer.name;
-  selectedCustomerId.value = customer.id;
-  showDropdown.value = false;
-  console.log("Selected customer ID:", customer.id);
+  router.push({ name: "Ex_Cust", query: { id: customer.id } }); // Navigate to ViewCustomer with customer ID
 };
 
-// Add customer logic
-const addCustomer = () => {
-  console.log("Add customer button clicked");
+const resetSearch = () => {
+  query.value = "";
+  results.value = [];
+  hasSearched.value = false;
+  showResults.value = false;
 };
 </script>
 
 <template>
+  <div class="search-center">
+    <div class="search-box">
+      <h2 class="search-heading">Search Customers</h2>
 
-    <!-- Centered Search Area -->
-    <div class="search-center">
-      <div class="search-box">
-        <h2 class="search-heading">Search Customers</h2>
+      <div v-if="!showResults">
+        <input
+          v-model="query"
+          @keyup.enter="searchCustomers"
+          type="text"
+          placeholder="Enter a name..."
+          class="search-input"
+        />
+        <p v-if="results.length === 0 && hasSearched" class="no-results">
+          No matching customers found.
+        </p>
+      </div>
 
-        <div class="flex flex-col md:flex-row items-center gap-4">
-          <!-- Input Box -->
-          <div class="relative w-full">
-            <input
-              v-model="query"
-              @input="searchCustomers"
-              @focus="showDropdown = true"
-              type="text"
-              placeholder="Enter a name..."
-              class="search-input"
-            />
-
-            <!-- Dropdown Results -->
-            <ul
-              v-if="showDropdown && results.length > 0"
-              class="dropdown-menu"
-            >
-              <li
-                v-for="customer in results"
-                :key="customer.id"
-                @click="selectCustomer(customer)"
-                class="dropdown-item"
-              >
-                <div class="font-semibold">{{ customer.name }}</div>
-                <div class="text-sm text-gray-600">
-                  ID: {{ customer.id }} | {{ customer.email }} | {{ customer.phone }}
-                </div>
-              </li>
-            </ul>
-
-            <p v-if="results.length === 0 && hasSearched" class="no-results">
-              No matching customers found.
-            </p>
-          </div>
-
-          <!-- Add Customer Button -->
-          <RouterLink
-            to="/AddCustomer"
-            class="add-customer-btn"
+      <div v-else>
+        <ul class="results-list">
+          <li
+            v-for="customer in results"
+            :key="customer.id"
+            @click="selectCustomer(customer)"
+            class="result-item"
           >
-            + Add Customer
-          </RouterLink>
-        </div>
+            <div class="font-semibold">{{ customer.name }}</div>
+            <div class="text-sm text-gray-600">
+              ID: {{ customer.id }} | {{ customer.email }} | {{ customer.phone }}
+            </div>
+          </li>
+        </ul>
+        <button @click="resetSearch" class="back-button">Back</button>
       </div>
     </div>
-
+  </div>
 </template>
 
 <style>
@@ -273,5 +258,38 @@ body {
 
 .close-btn:hover {
   background-color: #fbbf24;
+}
+
+/* Results List */
+.results-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.result-item {
+  padding: 10px;
+  cursor: pointer;
+  border-bottom: 1px solid #ddd;
+  transition: background-color 0.2s;
+}
+
+.result-item:hover {
+  background-color: #f3f3f3;
+}
+
+.back-button {
+  margin-top: 10px;
+  padding: 10px 15px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.back-button:hover {
+  background-color: #0056b3;
 }
 </style>
