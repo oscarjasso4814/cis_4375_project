@@ -6,15 +6,15 @@
       <thead>
         <tr>
           <th>ID</th>
-          <th>Desc</th>
-          <th>Assigned</th>
+          <th>Description</th>
+          <th>Assigned To:</th>
           <th>Customer</th>
-          <th>By</th>
+          <th>Created By:</th>
           <th>Priority</th>
           <th>Status</th>
           <th>Due</th>
-          <th>Time</th>
-          <th>Review</th>
+          <th>Time Created</th>
+          <th>Review Required</th>
           <th colspan="2">Actions</th>
         </tr>
       </thead>
@@ -31,12 +31,12 @@
           </td>
           <td>{{ task.due_date }}</td>
           <td>{{ task.time }}</td>
-          <td>{{ task.review_required ? '✔' : '✘' }}</td>
+          <td>{{ task.review_required ? 'Yes' : 'No' }}</td>
           <td class="action-cell">
             <button @click="updateTask(task.id)" class="btn small">✓</button>
           </td>
           <td class="action-cell">
-            <button @click="openEditModal(task)" class="btn small">✏️</button>
+            <button @click="openEditModal(task)" class="btn small">Edit Task</button>
           </td>
         </tr>
       </tbody>
@@ -68,7 +68,7 @@ const fetchTasks = async () => {
       id: task.TaskID,
       description: task.TaskDescription,
       assigned_to: `${task.AssignedFirstName} ${task.AssignedLastName}`,
-      created_by: `${task.CreatedByRepresentativeID || 'Rep #'}${task.CreatedByRepresentativeID}`,
+      created_by: `${task.CreatedByFirstName} ${task.CreatedByLastName}`,
       customer_id: task.CustomerID,
       customer_name: `${task.CustomerFirstName} ${task.CustomerLastName}`,
       priority: task.TaskPriority,
