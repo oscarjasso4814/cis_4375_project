@@ -55,7 +55,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
-import EditTaskModal from './components/EditTaskModal.vue'
+import EditTaskModal from '@/components/EditTaskModal.vue'
 
 const tasks = ref([])
 const showModal = ref(false)

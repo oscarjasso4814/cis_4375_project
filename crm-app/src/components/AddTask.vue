@@ -52,7 +52,6 @@
   </div>
 </template>
 
-
 <script setup>
 import { ref, defineEmits, defineProps } from 'vue'
 import axios from 'axios'
@@ -67,7 +66,6 @@ const props = defineProps({
   representatives: Array
 })
 
-
 const task = ref({
   assignedRep: props.createdByRep,
   createdByRep: props.createdByRep,
@@ -77,14 +75,27 @@ const task = ref({
   dueDate: '',
   time: '',
   priority: '',
-  status: '',
   type: '',
   isReviewRequired: false
 })
 
 const submitTask = async () => {
+  const payload = {
+    TaskDescription: task.value.description,
+    TaskType: task.value.type,
+    TaskPriority: task.value.priority,
+    TaskStatus: 'Pending',
+    TaskDueDate: task.value.dueDate,
+    TaskTime: task.value.time,
+    TaskIsReviewRequired: task.value.isReviewRequired,
+    CustomerID: task.value.customerId,
+    CustomerName: task.value.customerName,
+    AssignedRepresentativeID: task.value.assignedRep,
+    CreatedByRepresentativeID: task.value.createdByRep
+  }
+
   try {
-    await axios.post(url + '/api/Task', task.value)
+    await axios.post(url + '/api/Task', payload)
     alert('Task added successfully!')
     emit('close')
   } catch (err) {
@@ -92,7 +103,6 @@ const submitTask = async () => {
     alert('Failed to add task.')
   }
 }
-
 </script>
 
 <style scoped>

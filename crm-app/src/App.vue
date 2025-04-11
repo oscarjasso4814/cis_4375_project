@@ -18,6 +18,7 @@ import { ref, onMounted } from 'vue';
             <li><RouterLink to="/">Drop2</RouterLink></li>
             <li><RouterLink to="/">Drop3</RouterLink></li>
             <li><RouterLink to="/">Drop4</RouterLink></li>
+            <li><RouterLink to="/TaskPage">Tasks</RouterLink></li>
           </ul>
         </li>
         <li class="dropdown">
