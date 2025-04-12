@@ -1,8 +1,9 @@
 <script setup>
-import { ref, reactive } from "vue";
+import { ref, reactive, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import axios from "axios";
 import { url } from "../api/apiurl";
+
 
 const router = useRouter();
 const query = ref("");
@@ -57,10 +58,50 @@ const navigateToCustomerProfile = (customerId) => {
 const navigateToAddCustomer = () => {
   router.push({ name: "AddCustomer" });
 };
+
+// get rep name from localStorage
+console.log("Mocked search for:", query.value);
+const mockResults = [
+    { id: 1, name: "John Doe", phone: "(555) 123-4567", email: "john@example.com", dob: "1980-01-15", agent: "Amin Lalani", dateAdded: "2023-05-10" },
+    { id: 2, name: "Jane Smith", phone: "(555) 987-6543", email: "jane@example.com", dob: "1985-06-22", agent: "John Agent", dateAdded: "2024-02-15" }
+  ];
+
+  searchResults.value = mockResults.filter(customer => 
+    customer.name.toLowerCase().includes(query.value.toLowerCase())
+  );
+  
+  showResults.value = false;
+  
+  // Navigate to customer profile if only one result
+  if (searchResults.value.length === 1) {
+    navigateToCustomerProfile(searchResults.value[0].id);
+  }
+
+const repName = ref("");
+
+async function getRepName(repid) {
+  try {
+    const response = await axios.get(url + '/api/rep/' + repid + '/name');
+    const representative = response.data[0].FirstName + " " + response.data[0].LastName;
+    repName.value = representative;
+  } catch (error) {
+    console.error("Error fetching representative name:", error);
+    repName.value = "Agent";
+  }
+}
+
+
+onMounted(async () => {
+    const repsId = localStorage.getItem("reps_id");
+    console.log("Retrieved reps_id:", repsId);
+  getRepName(repsId);
+});
+
 </script>
 
 <template>
   <div class="search-container">
+    <h1 class="search-title"> Welcome, {{ repName }}</h1>
     <h2 class="search-title">Customer Search</h2>
     
     <!-- Search Form -->

@@ -25,6 +25,7 @@ import { RouterLink } from 'vue-router';
         </ul>
       </li>
       <li><RouterLink to="/login">Login</RouterLink></li>
+      <button v-if="isLoggedIn" @click="handleLogout" class="logout-btn">Logout</button>
     </ul>
   </nav>
 </template>

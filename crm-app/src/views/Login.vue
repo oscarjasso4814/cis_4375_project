@@ -33,6 +33,8 @@ const handleLogin = async () => {
     alert(`Welcome ${res.data.user.username}`);
     setUser(res.data.user);
     console.log("Logged in user:", res.data.user);
+    localStorage.setItem("reps_id", res.data.user.representative_id);
+    console.log("User ID:", res.data.user.representative_id);
     router.push({ name: "home" });
   } catch (err) {
     if (err.response?.status === 401) {
