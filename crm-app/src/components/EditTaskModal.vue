@@ -105,14 +105,14 @@ watch(
   { immediate: true }
 )
 
-onMounted(async () => {
+/*onMounted(async () => {
   try {
-    const res = await axios.get('http://127.0.0.1:5000/api/Representative')
+    const res = await axios.get('http://127.0.0.1:5000/api/representatives')
     representatives.value = res.data
   } catch (err) {
     console.error('Failed to fetch representatives:', err)
   }
-})
+})*/
 </script>
 
 <style scoped>

@@ -1,10 +1,9 @@
 <template>
   <div class="modal-overlay" @click.self="$emit('close')">
     <div class="modal-content">
-      <h3>Add Task</h3>
+      <h3>Add Task for {{ props.customerName }}</h3>
 
       <div class="customer-info">
-        <p><strong>Customer:</strong> {{ props.customerName }}</p>
         <p><strong>Customer ID:</strong> {{ props.customerId }}</p>
         <p><strong>Created By:</strong> {{ props.createdByName }}</p>
 
@@ -95,7 +94,7 @@ const submitTask = async () => {
   }
 
   try {
-    await axios.post(url + '/api/Task', payload)
+    await axios.post(url + '/api/tasks', payload)
     alert('Task added successfully!')
     emit('close')
   } catch (err) {
