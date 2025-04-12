@@ -1,110 +1,133 @@
 <template>
-    <div v-if="show" class="modal-overlay">
-      <div class="modal">
-        <h3 class="text-2xl font-bold text-center">Edit Task</h3>
-  
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="font-semibold">Description</label>
-            <input v-model="task.TaskDescription" class="input-field" />
-          </div>
-  
-          <div>
-            <label class="font-semibold">Type</label>
-            <input v-model="task.TaskType" class="input-field" />
-          </div>
-  
-          <div>
-            <label class="font-semibold">Priority</label>
-            <select v-model="task.TaskPriority" class="input-field">
-              <option value="High">High</option>
-              <option value="Medium">Medium</option>
-              <option value="Low">Low</option>
-            </select>
-          </div>
-  
-          <div>
-            <label class="font-semibold">Status</label>
-            <select v-model="task.TaskStatus" class="input-field">
-              <option value="Pending">Pending</option>
-              <option value="Completed">Completed</option>
-            </select>
-          </div>
-  
-          <div>
-            <label class="font-semibold">Due Date</label>
-            <input type="date" v-model="task.TaskDueDate" class="input-field" />
-          </div>
-  
-          <div>
-            <label class="font-semibold">Time</label>
-            <input type="time" v-model="task.TaskTime" class="input-field" />
-          </div>
-  
-          <div>
-            <label class="font-semibold">Review Required</label>
-            <input type="checkbox" v-model="task.TaskIsReviewRequired" class="mt-2" />
-          </div>
-  
-          <div>
-            <label class="font-semibold">Customer Name</label>
-            <input v-model="task.CustomerName" class="input-field" />
-          </div>
-  
-          <div>
-            <label class="font-semibold">Customer ID</label>
-            <input type="number" v-model="task.CustomerID" class="input-field" />
-          </div>
-  
-          <div>
-            <label class="block mb-2 font-semibold">Assigned Representative:</label>
-            <select v-model="task.AssignedRepresentativeID" class="w-full border p-2 rounded mb-4">
-            <option v-for="rep in reps" :key="rep.id" :value="rep.id">
-            {{ rep.name }}
-            </option>
-            </select>
+  <div v-if="show" class="modal-overlay">
+    <div class="modal">
+      <h3 class="text-2xl font-bold text-center">Edit Task</h3>
 
-          </div>
-  
-          <div>
-            <label class="font-semibold">Created By Rep ID</label>
-            <input type="number" v-model="task.CreatedByRepresentativeID" class="input-field" />
-          </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="font-semibold">Description</label>
+          <input v-model="editableTask.TaskDescription" class="input-field" />
         </div>
-  
-        <div class="button-group">
-          <button @click="$emit('save', task)" type="submit" class="btn save">Save</button>
-          <button @click="$emit('delete', task.TaskID)" type="button" class="btn delete">Delete</button>
-          <button @click="$emit('close')" type="button" class="btn cancel">Cancel</button>
+
+        <div>
+          <label class="font-semibold">Type</label>
+          <input v-model="editableTask.TaskType" class="input-field" />
+        </div>
+
+        <div>
+          <label class="font-semibold">Priority</label>
+          <select v-model="editableTask.TaskPriority" class="input-field">
+            <option value="High">High</option>
+            <option value="Medium">Medium</option>
+            <option value="Low">Low</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="font-semibold">Status</label>
+          <select v-model="editableTask.TaskStatus" class="input-field">
+            <option value="Pending">Pending</option>
+            <option value="Completed">Completed</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="font-semibold">Due Date</label>
+          <input type="date" v-model="editableTask.TaskDueDate" class="input-field" />
+        </div>
+
+        <div>
+          <label class="font-semibold">Time</label>
+          <input type="time" v-model="editableTask.TaskTime" class="input-field" />
+        </div>
+
+        <div>
+          <label class="font-semibold">Review Required</label>
+          <input type="checkbox" v-model="editableTask.TaskIsReviewRequired" class="mt-2" />
+        </div>
+
+        <div>
+          <label class="font-semibold">Customer Name</label>
+          <input v-model="editableTask.CustomerName" class="input-field" />
+        </div>
+
+        <div>
+          <label class="font-semibold">Customer ID</label>
+          <input type="number" v-model="editableTask.CustomerID" class="input-field" />
+        </div>
+
+        <div>
+          <label>Assign To:</label>
+          <select v-model="editableTask.AssignedRepresentativeID" class="input-field">
+            <option 
+              v-for="rep in representatives" 
+              :key="rep.RepresentativeID" 
+              :value="rep.RepresentativeID">
+              {{ rep.FirstName }} {{ rep.LastName }}
+            </option>
+          </select>
+        </div>
+
+        <div>
+          <label class="font-semibold">Created By Rep ID</label>
+          <input type="number" v-model="editableTask.CreatedByRepresentativeID" class="input-field" />
         </div>
       </div>
-    </div>
-  </template>
-  
-  <script setup>
-  import { defineProps } from 'vue'
-  
-  const props = defineProps({
-    show: Boolean,
-    task: Object,
-    reps: Array
-  })
-  </script>
-  
-  
-  <style scoped>
-  .input-field {
-    width: 100%;
-    padding: 10px;
-    border: 2px solid #ddd;
-    border-radius: 6px;
-    font-size: 16px;
-    background: white;
-    color: black;
-    margin-top: 4px;
-  }
 
-  .modal-overlay {
+      <div class="button-group">
+        <button @click="$emit('save', { ...editableTask })" type="submit" class="btn save">Save</button>
+        <button @click="$emit('delete', editableTask.TaskID)" type="button" class="btn delete">Delete</button>
+        <button @click="$emit('close')" type="button" class="btn cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, watch, onMounted, defineProps, defineEmits } from 'vue'
+import axios from 'axios'
+
+const emit = defineEmits(['close', 'save', 'delete'])
+
+const props = defineProps({
+  show: Boolean,
+  task: Object
+})
+
+const editableTask = ref({})
+const representatives = ref([])
+
+watch(
+  () => props.task,
+  (newTask) => {
+    editableTask.value = { ...newTask }
+  },
+  { immediate: true }
+)
+
+onMounted(async () => {
+  try {
+    const res = await axios.get('http://127.0.0.1:5000/api/Representative')
+    representatives.value = res.data
+  } catch (err) {
+    console.error('Failed to fetch representatives:', err)
+  }
+})
+</script>
+
+<style scoped>
+.input-field {
+  width: 100%;
+  padding: 10px;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  font-size: 16px;
+  background: white;
+  color: black;
+  margin-top: 4px;
+}
+
+.modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -116,6 +139,7 @@
   align-items: center;
   z-index: 1000;
 }
+
 .modal {
   background: white;
   padding: 20px;
@@ -140,7 +164,6 @@
   transition: background-color 0.2s ease;
 }
 
-/* Individual button styles */
 .btn.save {
   background-color: #4CAF50;
   color: white;
@@ -167,6 +190,4 @@
 .btn.cancel:hover {
   background-color: #757575;
 }
-
-  </style>
-  
+</style>
