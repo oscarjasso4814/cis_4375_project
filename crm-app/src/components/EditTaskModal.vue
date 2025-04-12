@@ -104,14 +104,33 @@ watch(
   },
   { immediate: true }
 )
+function fetchRep() {
+  axios.get('http://127.0.0.1:5000/api/Representative')
+    .then(res => {
+      representatives.value = res.data
+    })
+    .catch(err => {
+      console.error('Failed to fetch representatives:', err)
+    })
+}
 
-/*onMounted(async () => {
-  try {
-    const res = await axios.get('http://127.0.0.1:5000/api/representatives')
-    representatives.value = res.data
-  } catch (err) {
-    console.error('Failed to fetch representatives:', err)
-  }
+// Call the fetch task function when the component mounts
+onMounted(async () => {
+  setTimeout(() => {
+    fetchRep()
+  }, 1000)
+});
+
+ 
+/*
+onMounted(() => {
+  axios.get('http://127.0.0.1:5000/api/Representative')
+    .then(res => {
+      representatives.value = res.data
+    })
+    .catch(err => {
+      console.error('Failed to fetch representatives:', err)
+    })
 })*/
 </script>
 
