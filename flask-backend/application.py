@@ -30,6 +30,7 @@ cors.init_app(application)
 
 # Get request to get all task from the task table
 @application.route('/api/tasks', methods=['GET'])
+@cross_origin()
 def get_tasks():
     sql = """
         SELECT 
@@ -504,4 +505,4 @@ def add_data(table):
     return "Post Request Successful"
 
 if __name__ == "__main__":
-    application.run()
+    application.run(debug=True, threaded=True)

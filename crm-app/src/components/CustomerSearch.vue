@@ -3,6 +3,7 @@ import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import axios from "axios";
 import { url } from "../api/apiurl";
+import TaskOverlay from "./TaskOverlay.vue";
 
 const router = useRouter();
 const query = ref("");
@@ -35,15 +36,15 @@ const searchCustomers = async () => {
     showResults.value = false;
     
     // Send both query and type to the backend
-    const res = await axios.get(url + "/api/customers/search", {
+    await axios.get(url + "/api/customers/search", {
       params: { 
         query: query.value,
         type: searchBy.value 
       },
+    }).then((response) => {
+      searchResults.value = response.data;
+      showResults.value = true;
     });
-    
-    searchResults.value = res.data;
-    showResults.value = true;
     
     // If only one result is found, navigate directly to that customer's profile
     if (searchResults.value.length === 1) {
@@ -82,13 +83,14 @@ async function getRepName(repid) {
   }
   
   try {
-    const response = await axios.get(url + '/api/rep/' + repid + '/name');
-    if (response.data && response.data[0]) {
-      const representative = response.data[0].FirstName + " " + response.data[0].LastName;
-      repName.value = representative;
-    } else {
-      repName.value = "Agent";
-    }
+    await axios.get(url + '/api/rep/' + repid + '/name').then((response) => {
+      if (response.data && response.data[0]) {
+        const representative = response.data[0].FirstName + " " + response.data[0].LastName;
+        repName.value = representative;
+      } else {
+        repName.value = "Agent";
+      }
+    })
   } catch (error) {
     console.error("Error fetching representative name:", error);
     repName.value = "Agent";
@@ -98,7 +100,7 @@ async function getRepName(repid) {
 onMounted(async () => {
   const repsId = localStorage.getItem("reps_id");
   console.log("Retrieved reps_id:", repsId);
-  getRepName(repsId);
+  await getRepName(repsId);
 });
 </script>
 

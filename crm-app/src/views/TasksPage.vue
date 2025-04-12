@@ -245,8 +245,7 @@ const filteredTasks = computed(() => {
 const fetchTasks = async () => {
   try {
     isLoading.value = true
-    const response = await axios.get(`${url}/api/tasks`)
-    
+    await axios.get(`${url}/api/tasks`).then((response) => {
     tasks.value = response.data.map(task => ({
       id: task.TaskID,
       description: task.TaskDescription,
@@ -261,7 +260,7 @@ const fetchTasks = async () => {
       review_required: !!task.TaskIsReviewRequired,
       completed: task.TaskStatus === 'Completed',
       full: task
-    }))
+    }))})
   } catch (error) {
     console.error('Error fetching tasks:', error)
   } finally {

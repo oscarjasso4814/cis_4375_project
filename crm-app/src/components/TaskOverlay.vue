@@ -12,7 +12,7 @@ const isLoading = ref(true);
 const fetchTasks = async () => {
   try {
     isLoading.value = true;
-    const response = await axios.get(url + '/api/tasks');
+    await axios.get(`${url}/api/tasks`).then((response) => {
     
     // Limit to 5 most recent tasks for the homepage view
     tasks.value = response.data
@@ -27,7 +27,7 @@ const fetchTasks = async () => {
         status: task.TaskStatus,
         due_date: task.TaskDueDate,
         time: task.TaskTime
-      }));
+      }))})
   } catch (error) {
     console.error('Error fetching tasks:', error);
   } finally {
@@ -41,8 +41,10 @@ const viewAllTasks = () => {
 };
 
 // Call the fetch task function when the component mounts
-onMounted(() => {
-  fetchTasks();
+onMounted(async () => {
+  setTimeout(() => {
+    fetchTasks()
+  }, 1000)
 });
 </script>
 
