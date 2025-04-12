@@ -1,6 +1,6 @@
 <template>
-    <div v-if="show" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-      <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-2xl space-y-4">
+    <div v-if="show" class="modal-overlay">
+      <div class="modal">
         <h3 class="text-2xl font-bold text-center">Edit Task</h3>
   
         <div class="grid grid-cols-2 gap-4">
@@ -72,10 +72,10 @@
           </div>
         </div>
   
-        <div class="flex justify-end gap-4 pt-4">
-          <button @click="$emit('save', task)" class="btn bg-blue-600 hover:bg-blue-800 text-white">Save</button>
-          <button @click="$emit('delete', task.TaskID)" class="btn bg-red-600 hover:bg-red-800 text-white">Delete</button>
-          <button @click="$emit('close')" class="btn bg-gray-300 text-black">Cancel</button>
+        <div class="button-group">
+          <button @click="$emit('save', task)" type="submit" class="btn save">Save</button>
+          <button @click="$emit('delete', task.TaskID)" type="button" class="btn delete">Delete</button>
+          <button @click="$emit('close')" type="button" class="btn cancel">Cancel</button>
         </div>
       </div>
     </div>
@@ -103,5 +103,70 @@
     color: black;
     margin-top: 4px;
   }
+
+  .modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+.modal {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  width: 400px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.button-group {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.btn {
+  padding: 10px 20px;
+  font-size: 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+/* Individual button styles */
+.btn.save {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.btn.save:hover {
+  background-color: #45a049;
+}
+
+.btn.delete {
+  background-color: #f44336;
+  color: white;
+}
+
+.btn.delete:hover {
+  background-color: #d32f2f;
+}
+
+.btn.cancel {
+  background-color: #9e9e9e;
+  color: white;
+}
+
+.btn.cancel:hover {
+  background-color: #757575;
+}
+
   </style>
   
