@@ -1,9 +1,8 @@
 <script setup>
-import { ref, reactive, onMounted } from "vue";
+import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import axios from "axios";
 import { url } from "../api/apiurl";
-
 
 const router = useRouter();
 const query = ref("");
@@ -12,7 +11,16 @@ const isSearching = ref(false);
 const searchError = ref("");
 const showResults = ref(false);
 
-// Search function
+// Search by specific criteria
+const searchBy = ref("name"); // Default to name search
+const searchOptions = [
+  { value: "name", label: "Name" },
+  { value: "id", label: "Customer ID" },
+  { value: "phone", label: "Phone Number" },
+  { value: "email", label: "Email" }
+];
+
+// Search function - now sending the search type to backend
 const searchCustomers = async () => {
   if (!query.value.trim()) {
     searchResults.value = [];
@@ -24,9 +32,14 @@ const searchCustomers = async () => {
   try {
     isSearching.value = true;
     searchError.value = "";
+    showResults.value = false;
     
+    // Send both query and type to the backend
     const res = await axios.get(url + "/api/customers/search", {
-      params: { query: query.value },
+      params: { 
+        query: query.value,
+        type: searchBy.value 
+      },
     });
     
     searchResults.value = res.data;
@@ -60,64 +73,65 @@ const navigateToAddCustomer = () => {
 };
 
 // get rep name from localStorage
-console.log("Mocked search for:", query.value);
-const mockResults = [
-    { id: 1, name: "John Doe", phone: "(555) 123-4567", email: "john@example.com", dob: "1980-01-15", agent: "Amin Lalani", dateAdded: "2023-05-10" },
-    { id: 2, name: "Jane Smith", phone: "(555) 987-6543", email: "jane@example.com", dob: "1985-06-22", agent: "John Agent", dateAdded: "2024-02-15" }
-  ];
-
-  searchResults.value = mockResults.filter(customer => 
-    customer.name.toLowerCase().includes(query.value.toLowerCase())
-  );
-  
-  showResults.value = false;
-  
-  // Navigate to customer profile if only one result
-  if (searchResults.value.length === 1) {
-    navigateToCustomerProfile(searchResults.value[0].id);
-  }
-
 const repName = ref("");
 
 async function getRepName(repid) {
+  if (!repid) {
+    repName.value = "Agent";
+    return;
+  }
+  
   try {
     const response = await axios.get(url + '/api/rep/' + repid + '/name');
-    const representative = response.data[0].FirstName + " " + response.data[0].LastName;
-    repName.value = representative;
+    if (response.data && response.data[0]) {
+      const representative = response.data[0].FirstName + " " + response.data[0].LastName;
+      repName.value = representative;
+    } else {
+      repName.value = "Agent";
+    }
   } catch (error) {
     console.error("Error fetching representative name:", error);
     repName.value = "Agent";
   }
 }
 
-
 onMounted(async () => {
-    const repsId = localStorage.getItem("reps_id");
-    console.log("Retrieved reps_id:", repsId);
+  const repsId = localStorage.getItem("reps_id");
+  console.log("Retrieved reps_id:", repsId);
   getRepName(repsId);
 });
-
 </script>
 
 <template>
   <div class="search-container">
-    <h1 class="search-title"> Welcome, {{ repName }}</h1>
+    <h1 class="search-title">Welcome, {{ repName }}</h1>
     <h2 class="search-title">Customer Search</h2>
     
     <!-- Search Form -->
     <div class="search-form">
       <div class="input-group">
+        <!-- Search Criteria Dropdown -->
+        <select v-model="searchBy" class="search-criteria">
+          <option v-for="option in searchOptions" :key="option.value" :value="option.value">
+            {{ option.label }}
+          </option>
+        </select>
+        
+        <!-- Search Input -->
         <input
           v-model="query"
           type="text"
-          placeholder="Search by name, email, phone or ID..."
+          :placeholder="`Search by ${searchOptions.find(opt => opt.value === searchBy)?.label.toLowerCase()}...`"
           class="search-input"
           @keyup.enter="searchCustomers"
         />
+        
+        <!-- Search Button -->
         <button @click="searchCustomers" class="search-button">
           <i class="fas fa-search"></i> Search
         </button>
       </div>
+      
       <button @click="navigateToAddCustomer" class="add-customer-button">
         <i class="fas fa-plus"></i> Add Customer
       </button>
@@ -134,12 +148,13 @@ onMounted(async () => {
     </div>
     
     <!-- Search Results Table -->
-    <div v-if="showResults && searchResults.length > 1" class="results-container">
+    <div v-if="showResults && searchResults.length > 0" class="results-container">
       <h3 class="results-title">Search Results ({{ searchResults.length }})</h3>
       
       <table class="results-table">
         <thead>
           <tr>
+            <th>ID</th>
             <th>Name</th>
             <th>Phone</th>
             <th>Email</th>
@@ -151,6 +166,7 @@ onMounted(async () => {
         </thead>
         <tbody>
           <tr v-for="customer in searchResults" :key="customer.id" class="result-row">
+            <td>{{ customer.id }}</td>
             <td>{{ customer.name }}</td>
             <td>{{ customer.phone }}</td>
             <td>{{ customer.email }}</td>
@@ -172,7 +188,7 @@ onMounted(async () => {
     
     <!-- No Results Message -->
     <div v-if="showResults && searchResults.length === 0" class="no-results">
-      No customers found matching "{{ query }}". 
+      No customers found matching "{{ query }}" in {{ searchOptions.find(opt => opt.value === searchBy)?.label.toLowerCase() }}. 
       <button @click="navigateToAddCustomer" class="add-link">
         Add a new customer?
       </button>
@@ -211,11 +227,22 @@ onMounted(async () => {
   flex: 1;
 }
 
+.search-criteria {
+  padding: 12px;
+  border: 2px solid #ddd;
+  border-radius: 6px 0 0 6px;
+  font-size: 16px;
+  color: #333;
+  background-color: #f5f5f5;
+  min-width: 140px;
+  cursor: pointer;
+}
+
 .search-input {
   flex: 1;
   padding: 12px 15px;
   border: 2px solid #ddd;
-  border-radius: 6px 0 0 6px;
+  border-left: none;
   font-size: 16px;
   color: #333;
   transition: border-color 0.3s;
@@ -352,8 +379,19 @@ onMounted(async () => {
     align-items: stretch;
   }
   
-  .search-input {
+  .input-group {
+    flex-direction: column;
+  }
+  
+  .search-criteria {
     border-radius: 6px 6px 0 0;
+    width: 100%;
+  }
+  
+  .search-input {
+    border-left: 2px solid #ddd;
+    border-top: none;
+    border-radius: 0;
   }
   
   .search-button {
@@ -362,6 +400,7 @@ onMounted(async () => {
   
   .add-customer-button {
     margin-top: 10px;
+    width: 100%;
   }
   
   .results-table {

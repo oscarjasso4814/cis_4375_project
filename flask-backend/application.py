@@ -217,44 +217,88 @@ def get_customer(custid):
 # API for searching customers by name (First, Middle, Last)
 # This is the enhanced search endpoint for the flask backend application.py
 
+# Replace the existing search_customers function in your application.py with this one:
+
 @application.route('/api/customers/search', methods=['GET'])
 def search_customers():
     query = request.args.get('query', '')
+    search_type = request.args.get('type', 'name')  # Default to name search if not specified
+    
     if not query:
         return jsonify([])
 
     # Add wildcards to the search pattern
     search_pattern = f"%{query}%"
     
-    sql = """
-    SELECT 
-        c.CustomerID, 
-        c.FirstName, 
-        c.MiddleName, 
-        c.LastName, 
-        c.Email1, 
-        c.Phone1,
-        c.DateOfBirth,
-        c.DateAdded,
-        r.FirstName AS AgentFirstName,
-        r.LastName AS AgentLastName
-    FROM Customer c
-    LEFT JOIN Representative r ON c.AgentRecordID = r.RepresentativeID
-    WHERE 
-        c.FirstName LIKE %s OR 
-        c.LastName LIKE %s OR 
-        c.MiddleName LIKE %s OR 
-        c.Email1 LIKE %s OR 
-        c.Phone1 LIKE %s OR 
-        CAST(c.CustomerID AS CHAR) LIKE %s
-    LIMIT 10
-    """
-    
     try:
-        cursor.execute(sql, (
-            search_pattern, search_pattern, search_pattern,
-            search_pattern, search_pattern, search_pattern
-        ))
+        # Construct the SQL query based on search type
+        if search_type == 'id':
+            sql = """
+            SELECT 
+                c.CustomerID, 
+                c.FirstName, 
+                c.MiddleName, 
+                c.LastName, 
+                c.Email1, 
+                c.Phone1,
+                c.DateOfBirth,
+                c.AgentRecordID
+            FROM Customer c
+            WHERE CAST(c.CustomerID AS CHAR) LIKE %s
+            LIMIT 10
+            """
+            cursor.execute(sql, (search_pattern,))
+            
+        elif search_type == 'email':
+            sql = """
+            SELECT 
+                c.CustomerID, 
+                c.FirstName, 
+                c.MiddleName, 
+                c.LastName, 
+                c.Email1, 
+                c.Phone1,
+                c.DateOfBirth,
+                c.AgentRecordID
+            FROM Customer c
+            WHERE c.Email1 LIKE %s
+            LIMIT 10
+            """
+            cursor.execute(sql, (search_pattern,))
+            
+        elif search_type == 'phone':
+            sql = """
+            SELECT 
+                c.CustomerID, 
+                c.FirstName, 
+                c.MiddleName, 
+                c.LastName, 
+                c.Email1, 
+                c.Phone1,
+                c.DateAdded,
+                c.AgentRecordID
+            FROM Customer c
+            WHERE c.Phone1 LIKE %s
+            LIMIT 10
+            """
+            cursor.execute(sql, (search_pattern,))
+            
+        else:  # Default to name search
+            sql = """
+            SELECT 
+                c.CustomerID, 
+                c.FirstName, 
+                c.MiddleName, 
+                c.LastName, 
+                c.Email1, 
+                c.Phone1,
+                c.DateOfBirth,
+                c.AgentRecordID
+            FROM Customer c
+            WHERE c.FirstName LIKE %s OR c.LastName LIKE %s
+            LIMIT 10
+            """
+            cursor.execute(sql, (search_pattern, search_pattern))
         
         rows = cursor.fetchall()
         
@@ -272,38 +316,32 @@ def search_customers():
             email = row.get("Email1", "")
             phone = row.get("Phone1", "")
             dob = row.get("DateOfBirth", "")
-            date_added = row.get("DateAdded", "")
-            agent_first_name = row.get("AgentFirstName", "")
-            agent_last_name = row.get("AgentLastName", "")
+            agent_id = row.get("AgentRecordID", "")
             
             # Handle None values
             middle_name = middle_name or ""
             
-            # Format the agent name
-            agent_name = ""
-            if agent_first_name and agent_last_name:
-                agent_name = f"{agent_first_name} {agent_last_name}"
-            
             # Format the dates
             formatted_dob = str(dob) if dob else ""
-            formatted_date_added = str(date_added) if date_added else ""
-            
+
+            # Create a customer object matching your data structure
             customers.append({
                 "id": customer_id,
                 "name": f"{first_name} {middle_name} {last_name}".strip(),
                 "email": email or "",
                 "phone": phone or "",
                 "dob": formatted_dob,
-                "dateAdded": formatted_date_added,
-                "agent": agent_name
+                "agent": ""  # We'll get the agent name in a separate query if needed
             })
-            
+        
         return jsonify(customers)
         
     except Exception as e:
-        # Log the error
+        # Log the error with more detail to help debugging
         print(f"Error in customer search: {str(e)}")
-        # Return a more helpful error message (in development)
+        import traceback
+        traceback.print_exc()
+        # Return a more helpful error message
         return jsonify({"error": "An error occurred while searching for customers", "details": str(e)}), 500
 
 # POST API for login
