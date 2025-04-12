@@ -504,5 +504,274 @@ def add_data(table):
     conn.commit()
     return "Post Request Successful"
 
+
+# API for adding a new customer
+@application.route('/api/Customer', methods=['POST'])
+def add_customer():
+    try:
+        # Get JSON data from request
+        data = request.get_json()
+        
+        # Create SQL query for inserting a new customer
+        sql = """
+        INSERT INTO Customer (
+            Type, FirstName, MiddleName, LastName, Suffix, 
+            Title, Salutation, ActiveStatus, Country, IsUSACitizen,
+            Address, Zip, City, State, AddressVerified, 
+            MailingCountry, MailingAddress, MailingZip, MailingCity, MailingState,
+            Phone1, Phone2, Phone3, Phone4, 
+            DriversLicenseNum, DriversLicenseState, DateLicensed,
+            DateOfBirth, SocialSecurityNum, Gender, MaritalStatus,
+            HouseholdSize, PeopleApplying, HouseholdIncome,
+            Email1, Email2, Website, PreferredContact,
+            DoNotEmail, DoNotText, DoNotCall, DoNotMail, DoNotMarket, DoNotCaptureEmail,
+            UndeliverableMail, BadCell, BadPhone2, BadPhone3, BadPhone4,
+            UndeliverableEmail1, UndeliverableEmail2, DateAdded
+        ) VALUES (
+            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 
+            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 
+            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 
+            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 
+            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 
+            %s
+        )
+        """
+        
+        # Prepare values for insertion
+        values = (
+            data.get('Type'), 
+            data.get('FirstName'), 
+            data.get('MiddleName'), 
+            data.get('LastName'), 
+            data.get('Suffix'),
+            data.get('Title'), 
+            data.get('Salutation'), 
+            data.get('ActiveStatus'), 
+            data.get('Country'), 
+            data.get('IsUSACitizen'),
+            data.get('Address'), 
+            data.get('Zip'), 
+            data.get('City'), 
+            data.get('State'), 
+            data.get('AddressVerified'),
+            data.get('MailingCountry'), 
+            data.get('MailingAddress'), 
+            data.get('MailingZip'), 
+            data.get('MailingCity'), 
+            data.get('MailingState'),
+            data.get('Phone1'), 
+            data.get('Phone2'), 
+            data.get('Phone3'), 
+            data.get('Phone4'),
+            data.get('DriversLicenseNum'), 
+            data.get('DriversLicenseState'), 
+            data.get('DateLicensed'),
+            data.get('DateOfBirth'), 
+            data.get('SocialSecurityNum'), 
+            data.get('Gender'), 
+            data.get('MaritalStatus'),
+            data.get('HouseholdSize'), 
+            data.get('PeopleApplying'), 
+            data.get('HouseholdIncome'),
+            data.get('Email1'), 
+            data.get('Email2'), 
+            data.get('Website'), 
+            data.get('PreferredContact'),
+            data.get('DoNotEmail'), 
+            data.get('DoNotText'), 
+            data.get('DoNotCall'), 
+            data.get('DoNotMail'), 
+            data.get('DoNotMarket'), 
+            data.get('DoNotCaptureEmail'),
+            data.get('UndeliverableMail'), 
+            data.get('BadCell'), 
+            data.get('BadPhone2'), 
+            data.get('BadPhone3'), 
+            data.get('BadPhone4'),
+            data.get('UndeliverableEmail1'), 
+            data.get('UndeliverableEmail2'), 
+            data.get('DateAdded')
+        )
+        
+        # Execute the SQL query
+        cursor.execute(sql, values)
+        
+        # Get the ID of the last inserted row
+        customer_id = cursor.lastrowid
+        
+        # Commit the changes
+        conn.commit()
+        
+        # Return the newly created customer ID
+        return jsonify({
+            'message': 'Customer added successfully',
+            'CustomerID': customer_id
+        }), 201
+        
+    except Exception as e:
+        # Log the error
+        print(f"Error adding customer: {str(e)}")
+        
+        # Roll back any changes if an error occurs
+        conn.rollback()
+        
+        # Return error response
+        return jsonify({
+            'error': 'Failed to add customer',
+            'details': str(e)
+        }), 500
+
+# API for updating a customer
+@application.route('/api/Customer/<int:customer_id>', methods=['PUT'])
+def update_customer(customer_id):
+    try:
+        # Get JSON data from request
+        data = request.get_json()
+        
+        # Create SQL query for updating an existing customer
+        sql = """
+        UPDATE Customer SET
+            Type = %s, 
+            FirstName = %s, 
+            MiddleName = %s, 
+            LastName = %s, 
+            Suffix = %s,
+            Title = %s, 
+            Salutation = %s, 
+            ActiveStatus = %s, 
+            Country = %s, 
+            IsUSACitizen = %s,
+            Address = %s, 
+            Zip = %s, 
+            City = %s, 
+            State = %s, 
+            AddressVerified = %s,
+            MailingCountry = %s, 
+            MailingAddress = %s, 
+            MailingZip = %s, 
+            MailingCity = %s, 
+            MailingState = %s,
+            Phone1 = %s, 
+            Phone2 = %s, 
+            Phone3 = %s, 
+            Phone4 = %s,
+            DriversLicenseNum = %s, 
+            DriversLicenseState = %s, 
+            DateLicensed = %s,
+            DateOfBirth = %s, 
+            SocialSecurityNum = %s, 
+            Gender = %s, 
+            MaritalStatus = %s,
+            HouseholdSize = %s, 
+            PeopleApplying = %s, 
+            HouseholdIncome = %s,
+            Email1 = %s, 
+            Email2 = %s, 
+            Website = %s, 
+            PreferredContact = %s,
+            DoNotEmail = %s, 
+            DoNotText = %s, 
+            DoNotCall = %s, 
+            DoNotMail = %s, 
+            DoNotMarket = %s, 
+            DoNotCaptureEmail = %s,
+            UndeliverableMail = %s, 
+            BadCell = %s, 
+            BadPhone2 = %s, 
+            BadPhone3 = %s, 
+            BadPhone4 = %s,
+            UndeliverableEmail1 = %s, 
+            UndeliverableEmail2 = %s
+        WHERE CustomerID = %s
+        """
+        
+        # Prepare values for update
+        values = (
+            data.get('Type'), 
+            data.get('FirstName'), 
+            data.get('MiddleName'), 
+            data.get('LastName'), 
+            data.get('Suffix'),
+            data.get('Title'), 
+            data.get('Salutation'), 
+            data.get('ActiveStatus'), 
+            data.get('Country'), 
+            data.get('IsUSACitizen'),
+            data.get('Address'), 
+            data.get('Zip'), 
+            data.get('City'), 
+            data.get('State'), 
+            data.get('AddressVerified'),
+            data.get('MailingCountry'), 
+            data.get('MailingAddress'), 
+            data.get('MailingZip'), 
+            data.get('MailingCity'), 
+            data.get('MailingState'),
+            data.get('Phone1'), 
+            data.get('Phone2'), 
+            data.get('Phone3'), 
+            data.get('Phone4'),
+            data.get('DriversLicenseNum'), 
+            data.get('DriversLicenseState'), 
+            data.get('DateLicensed'),
+            data.get('DateOfBirth'), 
+            data.get('SocialSecurityNum'), 
+            data.get('Gender'), 
+            data.get('MaritalStatus'),
+            data.get('HouseholdSize'), 
+            data.get('PeopleApplying'), 
+            data.get('HouseholdIncome'),
+            data.get('Email1'), 
+            data.get('Email2'), 
+            data.get('Website'), 
+            data.get('PreferredContact'),
+            data.get('DoNotEmail'), 
+            data.get('DoNotText'), 
+            data.get('DoNotCall'), 
+            data.get('DoNotMail'), 
+            data.get('DoNotMarket'), 
+            data.get('DoNotCaptureEmail'),
+            data.get('UndeliverableMail'), 
+            data.get('BadCell'), 
+            data.get('BadPhone2'), 
+            data.get('BadPhone3'), 
+            data.get('BadPhone4'),
+            data.get('UndeliverableEmail1'), 
+            data.get('UndeliverableEmail2'),
+            customer_id  # WHERE condition value
+        )
+        
+        # Execute the SQL query
+        cursor.execute(sql, values)
+        
+        # Commit the changes
+        conn.commit()
+        
+        # Check if the update was successful (if any rows were affected)
+        if cursor.rowcount > 0:
+            return jsonify({
+                'message': 'Customer updated successfully',
+                'CustomerID': customer_id
+            })
+        else:
+            return jsonify({
+                'error': 'Customer not found or no changes made',
+                'CustomerID': customer_id
+            }), 404
+            
+    except Exception as e:
+        # Log the error
+        print(f"Error updating customer {customer_id}: {str(e)}")
+        
+        # Roll back any changes if an error occurs
+        conn.rollback()
+        
+        # Return error response
+        return jsonify({
+            'error': 'Failed to update customer',
+            'details': str(e)
+        }), 500
+    
+
 if __name__ == "__main__":
     application.run(debug=True, threaded=True)
