@@ -276,7 +276,6 @@ def search_customers():
                 c.LastName, 
                 c.Email1, 
                 c.Phone1,
-                c.DateAdded,
                 c.AgentRecordID
             FROM Customer c
             WHERE c.Phone1 LIKE %s
