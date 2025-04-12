@@ -764,5 +764,36 @@ def update_customer(customer_id):
         }), 500
     
 
+
+@application.route('/api/customers/<int:customer_id>/policies', methods=['GET'])
+def get_policies_for_customer(customer_id):
+    sql = """
+        SELECT 
+            p.PolicyID,
+            p.PolicyNumber,
+            p.EffectiveDate,
+            p.ExpirationDate,
+            p.AdditionalInfo,
+            c.CategoryName,
+            co.CompanyName,
+            p.Issuer
+        FROM Policy p
+        LEFT JOIN Category c ON p.CategoryID = c.CategoryID
+        LEFT JOIN Company co ON p.CompanyID = co.CompanyID
+        WHERE p.CustomerID = %s
+        ORDER BY p.EffectiveDate DESC
+    """
+    cursor.execute(sql, (customer_id,))
+    rows = cursor.fetchall()
+
+    def convert(val):
+        if isinstance(val, (datetime, date, timedelta)):
+            return str(val)
+        return val
+
+    return jsonify([{k: convert(v) for k, v in row.items()} for row in rows])
+
+
+
 if __name__ == "__main__":
     application.run(debug=True, threaded=True)
