@@ -1,6 +1,5 @@
 <script setup>
 import { RouterLink, RouterView, useRouter } from "vue-router";
-import HelloWorld from "./components/HelloWorld.vue";
 import { ref, onMounted } from "vue";
 import { user, clearUser } from "./stores/userSession";
 import Navbar from './components/Navbar.vue';
