@@ -118,71 +118,6 @@ const validateForm = () => {
   return Object.keys(newErrors).length === 0
 }
 
-// Format the customer data for the API
-const formatCustomerData = () => {
-  // Get the full name
-  const fullName = [
-    customer.firstName, 
-    customer.middleName, 
-    customer.lastName
-  ].filter(Boolean).join(' ')
-  
-  return {
-    Type: customer.type,
-    FirstName: customer.firstName,
-    MiddleName: customer.middleName || null,
-    LastName: customer.lastName,
-    Suffix: customer.suffix || null,
-    Title: customer.title || null,
-    Salutation: customer.salutation || null,
-    ActiveStatus: customer.activeStatus === 'Active' ? 1 : 0,
-    Country: customer.country,
-    IsUSACitizen: customer.isUsaCitizen ? 1 : 0,
-    Address: customer.address,
-    Zip: customer.zip,
-    City: customer.city,
-    State: customer.state,
-    AddressVerified: customer.addressVerified ? 1 : 0,
-    MailingCountry: customer.sameAddress ? customer.country : customer.mailingCountry,
-    MailingAddress: customer.sameAddress ? customer.address : customer.mailingAddress,
-    MailingZip: customer.sameAddress ? customer.zip : customer.mailingZip,
-    MailingCity: customer.sameAddress ? customer.city : customer.mailingCity,
-    MailingState: customer.sameAddress ? customer.state : customer.mailingState,
-    Phone1: customer.cell,
-    Phone2: customer.phone2 || null,
-    Phone3: customer.phone3 || null,
-    Phone4: customer.phone4 || null,
-    DriversLicenseNum: customer.driversLicense || null,
-    DriversLicenseState: customer.dlState || null,
-    DateLicensed: customer.dateLicensed || null,
-    DateOfBirth: customer.dateOfBirth || null,
-    SocialSecurityNum: customer.ssn || null,
-    Gender: customer.gender || null,
-    MaritalStatus: customer.maritalStatus || null,
-    HouseholdSize: customer.householdSize || null,
-    PeopleApplying: customer.peopleApplying || null,
-    HouseholdIncome: customer.householdIncome || null,
-    Email1: customer.email || null,
-    Email2: customer.email2 || null,
-    Website: customer.website || null,
-    PreferredContact: customer.preferredContact,
-    DoNotEmail: customer.doNotEmail ? 1 : 0,
-    DoNotText: customer.doNotText ? 1 : 0,
-    DoNotCall: customer.doNotCall ? 1 : 0,
-    DoNotMail: customer.doNotMail ? 1 : 0,
-    DoNotMarket: customer.doNotMarket ? 1 : 0,
-    DoNotCaptureEmail: customer.doNotCaptureEmail ? 1 : 0,
-    UndeliverableMail: customer.undeliverableMail ? 1 : 0,
-    BadCell: customer.badCell ? 1 : 0,
-    BadPhone2: customer.badPhone2 ? 1 : 0,
-    BadPhone3: customer.badPhone3 ? 1 : 0,
-    BadPhone4: customer.badPhone4 ? 1 : 0,
-    UndeliverableEmail1: customer.undeliverableEmail1 ? 1 : 0,
-    UndeliverableEmail2: customer.undeliverableEmail2 ? 1 : 0,
-    DateAdded: new Date().toISOString().split('T')[0]
-  }
-}
-
 // Function to save the customer
 const saveCustomer = async () => {
   // Validate the form first
@@ -199,30 +134,74 @@ const saveCustomer = async () => {
     isLoading.value = true
     
     // Format customer data for API
-    const customerData = formatCustomerData()
+    const customerData = {
+      FirstName: customer.firstName,
+      MiddleName: customer.middleName || null,
+      LastName: customer.lastName,
+      Suffix: customer.suffix || null,
+      Title: customer.title || null,
+      Salutation: customer.salutation || null,
+      ActiveStatus: customer.activeStatus === 'Active' ? 1 : 0,
+      Country: customer.country,
+      USAResidentStatus: customer.isUsaCitizen ? "Citizen" : "Non-Citizen",
+      Address: customer.address,
+      Zip: customer.zip,
+      City: customer.city,
+      State: customer.state,
+      SameMailingAddress: customer.sameAddress ? 1 : 0,
+      MailingCountry: customer.mailingCountry,
+      MailingAddress: customer.mailingAddress,
+      MailingZip: customer.mailingZip,
+      MailingCity: customer.mailingCity,
+      MailingState: customer.mailingState,
+      Phone1: customer.cell,
+      Phone2: customer.phone2 || null,
+      Phone3: customer.phone3 || null,
+      BadPhone4: customer.phone4 || null,
+      DriversLicenseNum: customer.driversLicense || null,
+      DriversLicenseState: customer.dlState || null,
+      DateOfBirth: customer.dateOfBirth || null,
+      SocialSecurityNum: customer.ssn || null,
+      Gender: customer.gender || null,
+      MaritalStatus: customer.maritalStatus || null,
+      HouseholdSize: customer.householdSize || null,
+      HouseholdIncome: customer.householdIncome || null,
+      Email1: customer.email || null,
+      Email2: customer.email2 || null,
+      Website: customer.website || null,
+      PrefferedContact: customer.preferredContact,
+      DoNotEmail: customer.doNotEmail ? 1 : 0,
+      DoNotText: customer.doNotText ? 1 : 0,
+      DoNotCall: customer.doNotCall ? 1 : 0,
+      DoNotMarket: customer.doNotMarket ? 1 : 0,
+      DoNotCaptureEmail: customer.doNotCaptureEmail ? 1 : 0,
+      UndeliverableMail: customer.undeliverableMail ? 1 : 0,
+      BadPhone1: customer.badCell ? customer.cell : null,
+      BadPhone2: customer.badPhone2 ? customer.phone2 : null,
+      BadPhone3: customer.badPhone3 ? customer.phone3 : null,
+      UndeliverableEmail1: customer.undeliverableEmail1 ? 1 : 0,
+      UndeliverableEmail2: customer.undeliverableEmail2 ? 1 : 0,
+      Type: customer.type
+    }
     
-    // Mock API call - replace with your actual API endpoint
     console.log('Sending customer data:', customerData)
     
-    // Simulate API call
-    setTimeout(() => {
-      alert('Customer added successfully!')
-      // Redirect to customer profile (replace with actual ID)
-      router.push('/')
-      isLoading.value = false
-    }, 1000)
+    // Make the actual API call
+    const response = await axios.post(`${url}/api/Customer`, customerData)
     
-    // Uncomment this for actual API implementation
-    // const response = await axios.post(`${url}/api/Customer`, customerData)
-    // if (response.data && response.data.CustomerID) {
-    //   router.push(`/customer/${response.data.CustomerID}`)
-    // } else {
-    //   alert('Customer added successfully!')
-    //   router.push('/')
-    // }
+    if (response.data && response.data.CustomerID) {
+      alert('Customer added successfully!')
+      // Redirect to the newly created customer's profile
+      router.push(`/customer/${response.data.CustomerID}`)
+    } else {
+      // We received a response but no customer ID
+      alert('Customer may not have been properly saved. Please check your data.')
+      router.push('/')
+    }
   } catch (error) {
     console.error('Error saving customer:', error)
     alert('Failed to save customer. Please try again.')
+  } finally {
     isLoading.value = false
   }
 }
