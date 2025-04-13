@@ -18,17 +18,16 @@
         <textarea v-model="task.description" required />
 
         <label>Assign To Representative:</label>
-          <select v-model="task.assignedRep" required>
+        <select v-model="task.assignedRep" required>
           <option disabled value="">-- Select Representative --</option>
           <option
-            v-for="rep in props.representatives"
+            v-for="rep in representatives"
             :key="rep.RepresentativeID"
             :value="rep.RepresentativeID"
           >
-          {{ rep.FirstName }} {{ rep.LastName }}
+            {{ rep.FirstName }} {{ rep.LastName }}
           </option>
-          </select>
-
+        </select>
 
         <label>Due Date:</label>
         <input type="date" v-model="task.dueDate" required />
@@ -52,7 +51,7 @@
 </template>
 
 <script setup>
-import { ref, defineEmits, defineProps } from 'vue'
+import { ref, defineEmits, defineProps, onMounted } from 'vue'
 import axios from 'axios'
 import { url } from "../api/apiurl"
 
@@ -61,9 +60,10 @@ const props = defineProps({
   customerId: Number,
   customerName: String,
   createdByRep: Number,
-  createdByName: String,
-  representatives: Array
+  createdByName: String
 })
+
+const representatives = ref([])
 
 const task = ref({
   assignedRep: props.createdByRep,
@@ -76,6 +76,23 @@ const task = ref({
   priority: '',
   type: '',
   isReviewRequired: false
+})
+
+function fetchRep() {
+  axios.get('http://127.0.0.1:5000/api/Representative')
+    .then(res => {
+      representatives.value = res.data
+    })
+    .catch(err => {
+      console.error('Failed to fetch representatives:', err)
+    })
+}
+
+// Call the fetch function on mount
+onMounted(() => {
+  setTimeout(() => {
+    fetchRep()
+  }, 1000)
 })
 
 const submitTask = async () => {
@@ -103,6 +120,7 @@ const submitTask = async () => {
   }
 }
 </script>
+
 
 <style scoped>
 .modal-overlay {
