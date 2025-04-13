@@ -382,9 +382,39 @@ def login():
         }
     })
 
+# GET API for getting an agent's notes
+@application.route('/api/agentnote/<repid>', methods=['GET'])
+def get_agent_notes(repid):
+    # Formats data into sql select command
+    sql = f"SELECT * FROM AgentNote WHERE CreatedByRepresentativeID = {repid}";
+    # Runs and commits the data insertion
+    cursor.execute(sql)
+    tabledata = cursor.fetchall()
+    return jsonify(tabledata)
 
+# POST API for adding an agent's note
+@application.route('/api/agentnote', methods=['POST'])
+def create_agentnote():
+    data = request.get_json()
+    cursor = conn.cursor()
 
-# API BRAINSTORMING; NOT FINAL
+    sql = """
+        INSERT INTO AgentNote (
+            CreatedByRepresentativeID,
+            NoteContent
+        )
+        VALUES (%s, %s)
+    """
+
+    values = (
+        data['CreatedByRepresentativeID'],
+        data['NoteContent']
+    )
+
+    cursor.execute(sql, values)
+    conn.commit()
+
+    return jsonify({'message': 'Agent note created successfully'}), 201
 
 # GET API for getting a table
 @application.route('/api/<table>', methods=['GET'])
@@ -439,7 +469,7 @@ def post_data(table, tableid):
 
 # PUT API for updating a table entry; expects JSON body with ID as a value
 @application.route('/api/<table>', methods=['PUT'])
-def post_data_no_id(table):
+def put_data_no_id(table):
     # Retrieves request data
     request_data = request.get_json()
     tableid = request_data.id
@@ -474,39 +504,32 @@ def delete_data(table, tableid):
     sql = f"DELETE FROM {table} WHERE {table}ID = {tableid}";
     # Runs and commits the data insertion
     cursor.execute(sql)
+    conn.commit();
     return "DELETE Request Sucessful"
 
 # POST API for adding a table entry
 @application.route('/api/<table>', methods=['POST'])
 def add_data(table):
-    # Retrieves posted json and extracts data by keys
     request_data = request.get_json()
 
-    # strings to hold the parameters for the insert statement
-    firstLoop = False
-    keys = ""
-    values = ""
-    for (key, value) in request_data.items():
-        # Concatenates string values with quotations for mySQL command
-        if type(value) is str:
-            value = '"' + value + '"'
+    # Extract keys and values from JSON
+    keys = list(request_data.keys())
+    values = list(request_data.values())
 
-        # Concatenates the keys for the insert command
-        if (not firstLoop):
-            keys = f'{keys}, key'
-            values = f'{values}, value'
-        else:
-            keys = key
-            values = value
-            firstLoop = False
-        
-    # Posting functionality
-    # Formats data into sql insert command
-    sql = f'INSERT INTO {table} ({keys}) VALUES ({values})'
-    # Runs and commits the data insertion
-    cursor.execute(sql)
-    conn.commit()
-    return "Post Request Successful"
+    # Create placeholders for parameterized query
+    placeholders = ', '.join(['%s'] * len(values))
+    columns = ', '.join(keys)
+
+    # Build SQL using parameterized placeholders
+    sql = f'INSERT INTO {table} ({columns}) VALUES ({placeholders})'
+
+    try:
+        cursor.execute(sql, values)
+        conn.commit()
+        return jsonify({'message': 'Post Request Successful'}), 201
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'error': str(e)}), 500
 
 
 # API for adding a new customer

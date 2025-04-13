@@ -1,31 +1,64 @@
 <!-- AddNotes -->
 <script setup>
 import { ref, onMounted } from 'vue';
+import axios from 'axios';
+import { url } from '@/api/apiurl'
 
 const showNoteBox = ref(false);
 const noteContent = ref('');
 const savedNotes = ref([]);
+const repsId = ref();
 
-onMounted(() => {
-  const storedNotes = localStorage.getItem('savedNotes');
-  if (storedNotes) {
-    savedNotes.value = JSON.parse(storedNotes);
-  }
+// onMounted(() => {
+//   const storedNotes = localStorage.getItem('savedNotes');
+//   if (storedNotes) {
+//     savedNotes.value = JSON.parse(storedNotes);
+//   }
+// });
+
+onMounted(async () => {
+  repsId.value = localStorage.getItem("reps_id");
+  setTimeout(() => {
+    fetchNotes(repsId.value)
+  }, 1500)
 });
 
-const saveNote = () => {
-  if (noteContent.value.trim() !== '') {
-    savedNotes.value.push({
-      content: noteContent.value,
-      timestamp: new Date().toLocaleString()
-    });
 
-    localStorage.setItem('savedNotes', JSON.stringify(savedNotes.value));
+// Fetch all agent notes for the homepage
+const fetchNotes = async (repid) => {
+  try {
+    const response = await axios.get(`${url}/api/agentnote/` + repid);
 
-    noteContent.value = '';
-    showNoteBox.value = false;
+    // Sort by most recent
+    savedNotes.value = response.data
+      .sort((a, b) => new Date(b.DateCreated) - new Date(a.DateCreated))
+      .map(note => ({
+        id: note.AgentNoteID,
+        content: note.NoteContent,
+        timestamp: note.DateCreated
+      }));
+  } catch (error) {
+    console.error('Error fetching notes:', error);
   }
 };
+
+const saveNote = async () => {
+  if (noteContent.value.trim() !== '') {
+    try {
+      await axios.post(`${url}/api/agentnote`, {
+        CreatedByRepresentativeID: repsId.value, // make sure 'repid' is available in your component
+        NoteContent: noteContent.value
+      });
+
+      fetchNotes(repsId.value);
+      noteContent.value = '';
+      showNoteBox.value = false;
+    } catch (error) {
+      console.error('Error saving note:', error);
+    }
+  }
+};
+
 
 const openNoteBox = () => {
   showNoteBox.value = true;
@@ -38,7 +71,8 @@ const cancelNote = () => {
 };
 
 // Delete note
-const deleteNote = (index) => {
+const deleteNote = async(noteid, index) => {
+  await axios.delete(`${url}/api/AgentNote/` + noteid);
   savedNotes.value.splice(index, 1); // Remove from array
   localStorage.setItem('savedNotes', JSON.stringify(savedNotes.value)); // Update localStorage
 };
@@ -47,7 +81,7 @@ const deleteNote = (index) => {
 <template>
   <div>
     <div class="sidebar-panel">
-      <h3 class="panel-title">Notes</h3>
+      <h3 class="panel-title">Agent Notes</h3>
 
       <!-- Add Note button -->
       <button v-if="!showNoteBox" class="action-btn" @click="openNoteBox">
@@ -76,7 +110,7 @@ const deleteNote = (index) => {
           <p class="note-content">{{ note.content }}</p>
           <small class="note-timestamp">{{ note.timestamp }}</small>
           <div class="button-group">
-            <button class="delete-btn" @click="deleteNote(index)">
+            <button class="delete-btn" @click="deleteNote(note.id, index)">
               Remove
             </button>
           </div>
@@ -193,6 +227,82 @@ const deleteNote = (index) => {
 .note-timestamp {
   font-size: 0.8rem;
   color: #aaa;
+}
+
+/* Agent Notes Panel */
+.sidebar-panel {
+  padding: 15px;
+  background-color: #ffffff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.panel-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 15px;
+  color: #333;
+}
+
+/* Loading and Empty Notes Messages */
+.loading-message,
+.no-notes {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: #6c757d;
+}
+
+.no-notes p {
+  margin: 0;
+}
+
+/* Notes Table */
+.notes-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.notes-table th,
+.notes-table td {
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.notes-table th {
+  font-weight: 600;
+  color: #555;
+  background-color: #f5f5f5;
+}
+
+/* Cell Styling */
+.id-cell {
+  width: 80px;
+  font-weight: 500;
+  color: #444;
+}
+
+.content-cell {
+  max-width: 400px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #333;
+}
+
+.date-cell {
+  color: #666;
+  font-size: 13px;
+}
+
+/* Row Hover */
+.note-row:hover {
+  background-color: #f8f9fa;
 }
 
 </style>

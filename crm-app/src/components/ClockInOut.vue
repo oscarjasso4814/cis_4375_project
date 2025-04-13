@@ -2,18 +2,19 @@
 // Clock In / Clock Out Timer System
 
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { user, totalWorkedTime } from '@/stores/userSession';
 
 // Save the check-in timestamp
 const saveCheckInTime = () => {
-  localStorage.setItem('checkInTime', Date.now().toString());
+  sessionStorage.setItem('checkInTime', Date.now().toString());
 };
 
 // Load and resume timer
 const loadCheckInTime = () => {
-  const savedTime = localStorage.getItem('checkInTime');
+  const savedTime = sessionStorage.getItem('checkInTime');
   if (savedTime) {
     const elapsed = Math.floor((Date.now() - parseInt(savedTime)) / 1000);
-    timer.value = elapsed;
+    totalWorkedTime.value = elapsed;
     startTimer();
     isCheckedIn.value = true;
   }
@@ -21,14 +22,13 @@ const loadCheckInTime = () => {
 
 // Timer Logic
 const isCheckedIn = ref(false);       // Tracks if the user is checked in
-const timer = ref(0);                 // Tracks the time in seconds
 let timerInterval = null;             // Holds the interval ID
-const totalWorkedTime = ref('');      // Stores the last worked session time
+const previousWorkedTime = ref('');      // Stores the last worked session time
 
 // Start counting time
 const startTimer = () => {
   timerInterval = setInterval(() => {
-    timer.value++;
+    totalWorkedTime.value++;
   }, 1000); // Every second, add 1 to the timer
 };
 
@@ -51,24 +51,28 @@ const handleCheck = () => {
   if (!isCheckedIn.value) {
     // Checking In
     saveCheckInTime();
-    timer.value = 0;
     startTimer();
     isCheckedIn.value = true;
   } else {
     // Checking Out
     stopTimer();
-    totalWorkedTime.value = formatTime(timer.value);
+    previousWorkedTime.value = formatTime(totalWorkedTime.value);
     isCheckedIn.value = false;
-    localStorage.removeItem('checkInTime'); // Clear stored time
+    sessionStorage.removeItem('checkInTime'); // Clear stored time
   }
 };
 
 // Computed live formatted timer
-const formattedTime = computed(() => formatTime(timer.value));
+const formattedTime = computed(() => formatTime(totalWorkedTime.value));
 
 // When the page loads
 onMounted(() => {
   loadCheckInTime();
+  // Starts the timer on login
+  if (user && !isCheckedIn.value) {
+    startTimer();
+    isCheckedIn.value = true;
+  }
 });
 
 // When the component unmounts
@@ -88,13 +92,13 @@ onBeforeUnmount(() => {
       </button>
 
       <!-- Shows live timer when checked in -->
-      <div v-if="isCheckedIn" class="timer-display">
+      <div class="timer-display">
         Time Working: {{ formattedTime }}
       </div>
 
-      <!-- Shows last session worked time after checking out -->
-      <div v-if="totalWorkedTime" class="worked-time-log">
-        Last Session: {{ totalWorkedTime }}
+      <!-- Shows current session worked time after checking out -->
+      <div v-if="!isCheckedIn" class="worked-time-log">
+        Paused
       </div>
     </div>
   </div>

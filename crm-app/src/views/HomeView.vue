@@ -2,7 +2,8 @@
 import AnnouncementOverlay from '../components/AnnouncementOverlay.vue';
 import CustomerSearch from '../components/CustomerSearch.vue';
 import TaskOverlay from '../components/TaskOverlay.vue';
-import AddNotes from '../components/AddNotes.vue';
+import AddCustomerNotes from '../components/AddCustomerNotes.vue';
+import AddAgentNotes from '@/components/AddAgentNotes.vue';
 import ClockInOut from '../components/ClockInOut.vue';
 
 </script>
@@ -20,7 +21,7 @@ import ClockInOut from '../components/ClockInOut.vue';
           <TaskOverlay />
         </div>
         <div class="box box-4">
-          <AddNotes />
+          <AddCustomerNotes />
         </div>
         <div class="box box-4">
           <ClockInOut />
@@ -30,6 +31,7 @@ import ClockInOut from '../components/ClockInOut.vue';
       <div class="right-column">
         <div class="box box-3">
           <CustomerSearch />
+          <AddAgentNotes />
         </div>
       </div>
     </main>
