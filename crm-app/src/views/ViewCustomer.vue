@@ -475,7 +475,7 @@ const contentSectionHeight = ref(300); // Default height
 // Fetch policies from backend
 async function getPoliciesFromDB(custid) {
   try {
-    const response = await axios.get(`${url}/api/customers/${custid}/policies`);
+    await axios.get(`${url}/api/customers/${custid}/policies`).then((response) => {
     policies.value = response.data.map(policy => ({
       id: policy.PolicyID,
       type: policy.CategoryName?.toUpperCase() || 'OTHER',
@@ -484,7 +484,7 @@ async function getPoliciesFromDB(custid) {
       coverage: policy.AdditionalInfo || 'N/A',
       premium: 'N/A', // placeholder
       startDate: policy.EffectiveDate || 'N/A'
-    }));
+    }))});
   } catch (err) {
     console.error("Error loading policies:", err);
   }
@@ -503,9 +503,9 @@ function calculateAge(dob) {
 
 async function fetchHouseholdMembers() {
   try {
-    const res = await axios.get(`/api/customer/${customer.id}/household-members`);
-    householdMembers.value = res.data;
-  } catch (error) {
+    await axios.get(`/api/customer/${customer.id}/household-members`).then((response) => {
+    householdMembers.value = response.data;
+  })} catch (error) {
     console.error('Error fetching household members:', error);
   }
 }
@@ -622,9 +622,9 @@ const stopResize = () => {
 // Function to fetch and update customer information
 async function getCustomer(custid) {
   try {
-    const response = await axios.get(`${url}/api/customer/${custid}`);
+    await axios.get(`${url}/api/customer/${custid}`).then((response) => {
     const customerData = response.data[0];
-
+    
     if (customerData) {
       // Update the customer object with fetched data
       customer.CustomerID = customerData.CustomerID || '';
@@ -675,7 +675,7 @@ async function getCustomer(custid) {
     } else {
       throw new Error("No customer data returned");
     }
-  } catch (error) {
+  })} catch (error) {
     console.error('Error fetching customer data:', error);
   }
 }
