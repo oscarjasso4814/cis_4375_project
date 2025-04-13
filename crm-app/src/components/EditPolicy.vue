@@ -258,7 +258,9 @@
   
     // Load subcategories for the selected category if available
     if (updatedPolicy.categoryId) {
-      loadSubcategories();
+      setTimeout(() => {
+        loadSubcategories();
+      }, 1000);
     }
   }
   
@@ -297,7 +299,7 @@
             { CompanyID: 3, CompanyName: "Progressive" }
           ];
         }
-      }, 1000)
+      }, 2000)
 
       setTimeout(() => {
         // Try to fetch agents
@@ -312,7 +314,7 @@
             { AgentRecordID: 2, FullName: "Mary Agent" }
           ];
         }
-      }, 2000)
+      }, 3000)
       
       setTimeout(() => {
         // Try to fetch representatives
@@ -333,7 +335,7 @@
         if (currentRepId) {
           updatedPolicy.representativeId = parseInt(currentRepId);
         }
-      }, 3000)
+      }, 4000)
       
     } catch (error) {
       console.error('Error loading form data:', error);
