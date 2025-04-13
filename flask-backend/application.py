@@ -1078,5 +1078,217 @@ def get_agents():
             'details': str(e)
         }), 500
 
+# Policy management endpoints
+@application.route('/api/policy/<int:policy_id>', methods=['POST'])
+def update_policy(policy_id):
+    """Update an existing policy"""
+    try:
+        data = request.get_json()
+        
+        # Create SQL query for updating a policy
+        sql = """
+        UPDATE Policy SET
+            CompanyID = %s,
+            CategoryID = %s,
+            SubcategoryID = %s,
+            PolicyNumber = %s,
+            Issuer = %s,
+            EffectiveDate = %s,
+            ExpirationDate = %s,
+            Premium = %s,
+            AgentRecordID = %s,
+            RepresentativeID = %s,
+            AdditionalInfo = %s
+        WHERE PolicyID = %s
+        """
+        
+        values = (
+            data.get('CompanyID'),
+            data.get('CategoryID'),
+            data.get('SubcategoryID'),
+            data.get('PolicyNumber'),
+            data.get('Issuer'),
+            data.get('EffectiveDate'),
+            data.get('ExpirationDate'),
+            data.get('Premium'),
+            data.get('AgentRecordID'),
+            data.get('RepresentativeID'),
+            data.get('AdditionalInfo'),
+            policy_id
+        )
+        
+        cursor.execute(sql, values)
+        conn.commit()
+        
+        return jsonify({
+            'message': 'Policy updated successfully',
+            'PolicyID': policy_id
+        })
+        
+    except Exception as e:
+        print(f"Error updating policy: {str(e)}")
+        conn.rollback()
+        return jsonify({
+            'error': 'Failed to update policy',
+            'details': str(e)
+        }), 500
+
+@application.route('/api/policy/<int:policy_id>/rewrite', methods=['POST'])
+def rewrite_policy(policy_id):
+    """Rewrite a policy (create a new one based on the old one but with different terms)"""
+    try:
+        data = request.get_json()
+        
+        # First, mark the original policy as rewritten
+        update_sql = """
+        UPDATE Policy SET
+            PolicyStatus = 'Rewritten'
+        WHERE PolicyID = %s
+        """
+        cursor.execute(update_sql, (policy_id,))
+        
+        # Then, create a new policy with the updated data
+        insert_sql = """
+        INSERT INTO Policy (
+            CustomerID, CompanyID, CategoryID, SubcategoryID, 
+            PolicyNumber, Issuer, EffectiveDate, ExpirationDate,
+            Premium, AgentRecordID, RepresentativeID, AdditionalInfo,
+            PolicyStatus
+        ) VALUES (
+            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'Active'
+        )
+        """
+        
+        values = (
+            data.get('CustomerID'),
+            data.get('CompanyID'),
+            data.get('CategoryID'),
+            data.get('SubcategoryID'),
+            data.get('PolicyNumber'),
+            data.get('Issuer'),
+            data.get('EffectiveDate'),
+            data.get('ExpirationDate'),
+            data.get('Premium'),
+            data.get('AgentRecordID'),
+            data.get('RepresentativeID'),
+            data.get('AdditionalInfo')
+        )
+        
+        cursor.execute(insert_sql, values)
+        new_policy_id = cursor.lastrowid
+        
+        conn.commit()
+        
+        return jsonify({
+            'message': 'Policy rewritten successfully',
+            'OriginalPolicyID': policy_id,
+            'PolicyID': new_policy_id
+        })
+        
+    except Exception as e:
+        print(f"Error rewriting policy: {str(e)}")
+        conn.rollback()
+        return jsonify({
+            'error': 'Failed to rewrite policy',
+            'details': str(e)
+        }), 500
+
+@application.route('/api/policy/<int:policy_id>/renew', methods=['POST'])
+def renew_policy(policy_id):
+    """Renew a policy (create a new one with a new date range)"""
+    try:
+        data = request.get_json()
+        
+        # First, mark the original policy as renewed
+        update_sql = """
+        UPDATE Policy SET
+            PolicyStatus = 'Renewed'
+        WHERE PolicyID = %s
+        """
+        cursor.execute(update_sql, (policy_id,))
+        
+        # Then, create a new policy with the renewed data
+        insert_sql = """
+        INSERT INTO Policy (
+            CustomerID, CompanyID, CategoryID, SubcategoryID, 
+            PolicyNumber, Issuer, EffectiveDate, ExpirationDate,
+            Premium, AgentRecordID, RepresentativeID, AdditionalInfo,
+            PolicyStatus
+        ) VALUES (
+            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'Active'
+        )
+        """
+        
+        values = (
+            data.get('CustomerID'),
+            data.get('CompanyID'),
+            data.get('CategoryID'),
+            data.get('SubcategoryID'),
+            data.get('PolicyNumber'),
+            data.get('Issuer'),
+            data.get('EffectiveDate'),
+            data.get('ExpirationDate'),
+            data.get('Premium'),
+            data.get('AgentRecordID'),
+            data.get('RepresentativeID'),
+            data.get('AdditionalInfo')
+        )
+        
+        cursor.execute(insert_sql, values)
+        new_policy_id = cursor.lastrowid
+        
+        conn.commit()
+        
+        return jsonify({
+            'message': 'Policy renewed successfully',
+            'OriginalPolicyID': policy_id,
+            'PolicyID': new_policy_id
+        })
+        
+    except Exception as e:
+        print(f"Error renewing policy: {str(e)}")
+        conn.rollback()
+        return jsonify({
+            'error': 'Failed to renew policy',
+            'details': str(e)
+        }), 500
+
+@application.route('/api/policy/<int:policy_id>/cancel', methods=['POST'])
+def cancel_policy(policy_id):
+    """Cancel a policy"""
+    try:
+        data = request.get_json()
+        
+        # Mark the policy as canceled
+        update_sql = """
+        UPDATE Policy SET
+            PolicyStatus = 'Canceled',
+            CancelReason = %s,
+            CancelDate = %s
+        WHERE PolicyID = %s
+        """
+        
+        values = (
+            data.get('CancelReason'),
+            data.get('CancelDate') or datetime.now().strftime('%Y-%m-%d'),
+            policy_id
+        )
+        
+        cursor.execute(update_sql, values)
+        conn.commit()
+        
+        return jsonify({
+            'message': 'Policy canceled successfully',
+            'PolicyID': policy_id
+        })
+        
+    except Exception as e:
+        print(f"Error canceling policy: {str(e)}")
+        conn.rollback()
+        return jsonify({
+            'error': 'Failed to cancel policy',
+            'details': str(e)
+        }), 500
+
 if __name__ == "__main__":
     application.run(debug=True, threaded=True)
