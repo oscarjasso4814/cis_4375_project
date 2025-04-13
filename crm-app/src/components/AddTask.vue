@@ -1,17 +1,14 @@
 <template>
   <div class="modal-overlay" @click.self="$emit('close')">
     <div class="modal-content">
-      <h3>Add Task</h3>
+      <h3>Add Task for {{ props.customerName }}</h3>
 
       <div class="customer-info">
-        <p><strong>Customer:</strong> {{ props.customerName }}</p>
         <p><strong>Customer ID:</strong> {{ props.customerId }}</p>
-        <p><strong>Created By:</strong> {{ props.createdByName }}</p>
-
+        <p><strong>Created By:</strong> {{ createdByName }}</p>
       </div>
 
       <form @submit.prevent="submitTask">
-        <!-- Form fields here -->
         <label>Type:</label>
         <input v-model="task.type" required />
 
@@ -19,17 +16,16 @@
         <textarea v-model="task.description" required />
 
         <label>Assign To Representative:</label>
-          <select v-model="task.assignedRep" required>
+        <select v-model="task.assignedRep" required>
           <option disabled value="">-- Select Representative --</option>
           <option
-            v-for="rep in props.representatives"
+            v-for="rep in representatives"
             :key="rep.RepresentativeID"
             :value="rep.RepresentativeID"
           >
-          {{ rep.FirstName }} {{ rep.LastName }}
+            {{ rep.FirstName }} {{ rep.LastName }}
           </option>
-          </select>
-
+        </select>
 
         <label>Due Date:</label>
         <input type="date" v-model="task.dueDate" required />
@@ -52,23 +48,26 @@
   </div>
 </template>
 
+
 <script setup>
-import { ref, defineEmits, defineProps } from 'vue'
+import { ref, defineEmits, defineProps, onMounted } from 'vue'
 import axios from 'axios'
 import { url } from "../api/apiurl"
 
 const emit = defineEmits(['close'])
+
 const props = defineProps({
   customerId: Number,
-  customerName: String,
-  createdByRep: Number,
-  createdByName: String,
-  representatives: Array
+  customerName: String
 })
 
+const representatives = ref([])
+const createdByRep = ref(null)
+const createdByName = ref('')
+
 const task = ref({
-  assignedRep: props.createdByRep,
-  createdByRep: props.createdByRep,
+  assignedRep: '',
+  createdByRep: null,
   customerId: props.customerId,
   customerName: props.customerName,
   description: '',
@@ -79,23 +78,47 @@ const task = ref({
   isReviewRequired: false
 })
 
+function fetchRep() {
+  axios.get('http://127.0.0.1:5000/api/Representative')
+    .then(res => {
+      representatives.value = res.data
+    })
+    .catch(err => {
+      console.error('Failed to fetch representatives:', err)
+    })
+}
+
+function fetchCreatorName() {
+  axios.get(`http://127.0.0.1:5000/api/rep/${createdByRep.value}/name`)
+    .then(res => {
+      if (res.data.length > 0) {
+        const rep = res.data[0]
+        createdByName.value = `${rep.FirstName} ${rep.LastName}`
+      }
+    })
+    .catch(err => {
+      console.error('Failed to fetch rep name:', err)
+    })
+}
+
 const submitTask = async () => {
   const payload = {
-    TaskDescription: task.value.description,
-    TaskType: task.value.type,
-    TaskPriority: task.value.priority,
-    TaskStatus: 'Pending',
-    TaskDueDate: task.value.dueDate,
-    TaskTime: task.value.time,
-    TaskIsReviewRequired: task.value.isReviewRequired,
-    CustomerID: task.value.customerId,
-    CustomerName: task.value.customerName,
-    AssignedRepresentativeID: task.value.assignedRep,
-    CreatedByRepresentativeID: task.value.createdByRep
-  }
+  CustomerID: task.value.customerId,
+  AssignedRepresentativeID: task.value.assignedRep,
+  CreatedByRepresentativeID: task.value.createdByRep,
+  CustomerName: task.value.customerName,
+  TaskType: task.value.type,
+  TaskIsReviewRequired: task.value.isReviewRequired ? 1 : 0,
+  TaskDueDate: task.value.dueDate,
+  TaskTime: task.value.time,
+  TaskPriority: task.value.priority,
+  TaskStatus: 'Pending',
+  TaskDescription: task.value.description
+}
+
 
   try {
-    await axios.post(url + '/api/Task', payload)
+    await axios.post(url + '/api/tasks', payload)
     alert('Task added successfully!')
     emit('close')
   } catch (err) {
@@ -103,7 +126,15 @@ const submitTask = async () => {
     alert('Failed to add task.')
   }
 }
+
+onMounted(() => {
+  createdByRep.value = Number(localStorage.getItem('reps_id'))
+  task.value.createdByRep = createdByRep.value
+  fetchCreatorName()
+  setTimeout(fetchRep, 1000)
+})
 </script>
+
 
 <style scoped>
 .modal-overlay {
