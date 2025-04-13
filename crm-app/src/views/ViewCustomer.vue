@@ -589,7 +589,7 @@ async function getPoliciesFromDB(custid) {
 
 
 // Household member functions
-async function calculateAge(dob) {
+ function calculateAge(dob) {
   if (!dob) return '';
   const birth = new Date(dob);
   const today = new Date();
