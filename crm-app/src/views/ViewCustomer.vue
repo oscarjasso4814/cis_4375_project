@@ -1,16 +1,14 @@
-<!-- CustomerProfile.vue -->
 <template>
-  <!-- Full page layout -->
-  <div class="profile-container">
-    <!-- Header with customer name and quick actions -->
+  <div class="view-customer-container">
+  <div class="customer-profile-container">
+    <!-- Header with customer name and actions -->
     <header class="profile-header">
-      <div class="customer-title">
+      <div class="customer-info">
         <h1>{{ customer.name }}</h1>
         <span class="customer-id">ID: {{ customer.id }}</span>
-        <span class="badge" :class="customer.status.toLowerCase()">{{ customer.status }}</span>
-        <span class="badge sub-status" v-if="customer.subStatus !== 'None'">{{ customer.subStatus }}</span>
+        <span :class="['status-badge', customer.status.toLowerCase()]">{{ customer.status }}</span>
       </div>
-      <div class="quick-actions">
+      <div class="header-actions">
         <button class="icon-btn" title="Print Profile" @click="printProfile">
           <i class="fas fa-print"></i>
         </button>
@@ -20,287 +18,330 @@
       </div>
     </header>
 
-    <!-- Main Layout -->
-    <div class="profile-layout">
-      <!-- Left Sidebar - Customer Info -->
-      <div class="sidebar left-sidebar">
-        <div class="sidebar-panel customer-panel">
-          <h3>Customer Information</h3>
-          <div class="customer-summary">
-            <div class="info-section">
-              <h4>Contact</h4>
-              <div class="info-item">
-                <i class="fas fa-mobile-alt"></i>
-                <span>{{ customer.cell }}</span>
-              </div>
-              <div class="info-item">
-                <i class="fas fa-envelope"></i>
-                <span>{{ customer.email }}</span>
+    <!-- Main Content Area -->
+    <div class="profile-content">
+      <!-- Left Column - Customer Info -->
+      <div class="left-column">
+        <div class="box customer-details">
+          <div class="box-header">
+            <h2>Contact</h2>
+          </div>
+          <div class="box-content">
+            <div class="info-row">
+              <div class="info-label">Name:</div>
+              <div class="info-value">{{ customer.name }}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">Cell:</div>
+              <div class="info-value">{{ customer.cell }}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">Phone 2:</div>
+              <div class="info-value">{{ customer.phone2 || 'N/A' }}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">Email:</div>
+              <div class="info-value">{{ customer.email }}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">Physical Address:</div>
+              <div class="info-value">
+                {{ customer.address.street }}<br>
+                {{ customer.address.city }}, {{ customer.address.state }} {{ customer.address.zip }}
               </div>
             </div>
-            
-            <div class="info-section">
-              <h4>Address</h4>
-              <div class="info-item">
-                <i class="fas fa-map-marker-alt"></i>
-                <address>
-                  {{ customer.address.street }}<br>
-                  {{ customer.address.city }}, {{ customer.address.state }} {{ customer.address.zip }}
-                </address>
-              </div>
+            <div class="info-row">
+              <div class="info-label">Mailing Address:</div>
+              <div class="info-value">{{ customer.mailingAddress || 'Same as physical address' }}</div>
             </div>
-            
-            <div class="info-section">
-              <h4>Personal Details</h4>
-              <div class="info-item">
-                <i class="fas fa-birthday-cake"></i>
-                <span>DOB: {{ customer.dob }}</span>
-              </div>
-              <div class="info-item">
-                <i class="fas fa-user"></i>
-                <span>{{ customer.gender }}, {{ customer.maritalStatus }}</span>
-              </div>
-              <div class="info-item">
-                <i class="fas fa-id-card"></i>
-                <span>SSN: {{ customer.ssnTaxId }}</span>
-              </div>
+            <div class="info-row">
+              <div class="info-label">DOB:</div>
+              <div class="info-value">{{ customer.dob }}</div>
             </div>
-            
-            <div class="info-section">
-              <h4>Account Details</h4>
-              <div class="info-item">
-                <i class="fas fa-users"></i>
-                <span>Type: {{ customer.customerType }}</span>
-              </div>
-              <div class="info-item">
-                <i class="fas fa-user-tie"></i>
-                <span>Agent: {{ customer.agentOfRecord }}</span>
-              </div>
-              <div class="info-item">
-                <i class="fas fa-calendar-alt"></i>
-                <span>Added: {{ customer.dateAdded }}</span>
-              </div>
+            <div class="info-row">
+              <div class="info-label">Gender:</div>
+              <div class="info-value">{{ customer.gender }}</div>
             </div>
-            
-            <div class="info-section">
-              <h4>Household</h4>
-              <div class="info-item">
-                <i class="fas fa-home"></i>
-                <span>Size: {{ customer.householdSize }}</span>
-              </div>
-              <div class="info-item">
-                <i class="fas fa-dollar-sign"></i>
-                <span>Income: {{ customer.householdIncome }}</span>
-              </div>
+            <div class="info-row">
+              <div class="info-label">Marital Status:</div>
+              <div class="info-value">{{ customer.maritalStatus }}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">SSN/Tax ID:</div>
+              <div class="info-value">{{ customer.ssnTaxId }}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">Agent of Record:</div>
+              <div class="info-value">{{ customer.agentOfRecord }}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">Date Added:</div>
+              <div class="info-value">{{ customer.dateAdded }}</div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Middle Content - Policy Information -->
-      <div class="main-content">
-        <!-- Insurance Type Tabs -->
-        <div class="insurance-tabs">
-          <button 
-            v-for="type in insuranceTypes" 
-            :key="type.value"
-            class="tab-btn" 
-            :class="{ active: activeInsuranceType === type.value }" 
-            @click="activeInsuranceType = type.value"
-          >
-            <i :class="type.icon"></i>
-            {{ type.label }}
-          </button>
-        </div>
-
-        <!-- Policy Content Area -->
-        <div class="policy-content">
-          <div class="policy-header">
-            <h3>{{ activeInsuranceType }} Insurance Policies</h3>
-            <button class="add-policy-btn" @click="addNewPolicy">
-              <i class="fas fa-plus"></i> Add Policy
-            </button>
+      <!-- Center Column - Policies -->
+      <div class="center-column">
+        <div class="box">
+          <div class="box-header">
+            <div class="insurance-tabs">
+              <button 
+                v-for="type in insuranceTypes" 
+                :key="type.value"
+                :class="['tab-btn', { active: activeInsuranceType === type.value }]" 
+                @click="activeInsuranceType = type.value"
+              >
+                <i :class="type.icon"></i>
+                {{ type.label }}
+              </button>
+            </div>
           </div>
-          
-          <div class="policy-list">
-            <template v-if="getPolicies(activeInsuranceType).length > 0">
-              <div v-for="policy in getPolicies(activeInsuranceType)" :key="policy.id" class="policy-card">
-                <div class="policy-card-header">
-                  <h4>{{ policy.name }}</h4>
-                  <span class="policy-number">{{ policy.number }}</span>
-                </div>
-                <div class="policy-card-body">
-                  <div class="policy-detail">
-                    <span class="detail-label">Coverage:</span>
-                    <span class="detail-value">{{ policy.coverage }}</span>
-                  </div>
-                  <div class="policy-detail">
-                    <span class="detail-label">Premium:</span>
-                    <span class="detail-value">{{ policy.premium }}</span>
-                  </div>
-                  <div class="policy-detail">
-                    <span class="detail-label">Start Date:</span>
-                    <span class="detail-value">{{ policy.startDate }}</span>
-                  </div>
-                  <div class="policy-detail" v-if="policy.beneficiary">
-                    <span class="detail-label">Beneficiary:</span>
-                    <span class="detail-value">{{ policy.beneficiary }}</span>
-                  </div>
-                </div>
-                <div class="policy-card-footer">
-                  <button class="small-btn">View Details</button>
-                  <button class="small-btn">Edit</button>
-                </div>
+          <div class="box-content">
+            <div class="policies-header">
+              <h3>{{ activeInsuranceType }} Insurance Policies</h3>
+              <button class="primary-btn" @click="addNewPolicy">
+                <i class="fas fa-plus"></i> Add Policy
+              </button>
+            </div>
+            
+            <!-- Line item view for policies -->
+            <div class="policies-list">
+              <div v-if="getPolicies(activeInsuranceType).length > 0">
+                <table class="policies-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Policy #</th>
+                      <th>Coverage</th>
+                      <th>Premium</th>
+                      <th>Start Date</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr class="text-color" v-for="policy in getPolicies(activeInsuranceType)" :key="policy.id">
+                      <td>{{ policy.name }}</td>
+                      <td>{{ policy.number }}</td>
+                      <td>{{ policy.coverage }}</td>
+                      <td>{{ policy.premium }}</td>
+                      <td>{{ policy.startDate }}</td>
+                      <td>
+                        <div class="dropdown">
+                          <button class="dropdown-btn">
+                            Action <i class="fas fa-caret-down"></i>
+                          </button>
+                          <div class="dropdown-content">
+                            <a href="#" @click.prevent="rewritePolicy(policy.id)">Re-write</a>
+                            <a href="#" @click.prevent="renewPolicy(policy.id)">Re-new</a>
+                            <a href="#" @click.prevent="cancelPolicy(policy.id)">Cancel</a>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
-            </template>
-            <div v-else class="no-policies">
-              <div class="empty-state">
-                <i class="fas fa-folder-open"></i>
-                <p>No {{ activeInsuranceType }} policies found</p>
-                <button class="add-policy-btn" @click="addNewPolicy">
-                  <i class="fas fa-plus"></i> Add New Policy
+              <div v-else class="no-policies">
+                <p>No {{ activeInsuranceType }} policies found for this customer</p>
+                <button class="primary-btn" @click="addNewPolicy">
+                  <i class="fas fa-plus"></i> Add Policy
                 </button>
               </div>
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- Right Sidebar - Action Items -->
-      <div class="sidebar right-sidebar">
-        <div class="sidebar-panel action-panel">
-          <h3>Actions</h3>
-          <div class="action-list">
-            <button class="action-btn" @click="addNewPolicy">
-              <i class="fas fa-file-medical"></i>
-              <span>New Policy</span>
-            </button>
-            <button class="action-btn" @click="addNote">
-              <i class="fas fa-sticky-note"></i>
-              <span>Add Note</span>
-            </button>
-            <button class="action-btn" @click="openACORDForms">
-              <i class="fas fa-file-alt"></i>
-              <span>ACORD Forms</span>
-            </button>
-            <button class="action-btn" @click="showModal = true">
-              <i class="fas fa-envelope-open-text"></i>
-              <span>Add Task</span>
-            </button>
-            <!-- Show modal only if true -->
-            <AddTask
-              v-if="showModal"
-              :customer-id="customer.CustomerID"
-              :customer-name="customer.FirstName + ' ' + customer.LastName"
-              :created-by-rep="loggedInRepId"
-              :created-by-name="loggedInRepName"
-              :representatives="repList"
-              @close="showModal = false"
-              />
-            <button class="action-btn" @click="addChangeRequest">
-              <i class="fas fa-exchange-alt"></i>
-              <span>Change Request</span>
-            </button>
-            <button class="action-btn" @click="openMailingServices">
-              <i class="fas fa-mail-bulk"></i>
-              <span>Mailing</span>
-            </button>
+        
+        <!-- Combined Notes, Attachments and Tasks Section with toggle -->
+        <div class="box combined-section">
+          <div class="box-header">
+            <div class="tab-toggle">
+              <button 
+                :class="['toggle-btn', { active: activeTab === 'notes' }]" 
+                @click="activeTab = 'notes'"
+              >
+                <i class="fas fa-sticky-note"></i> Notes
+              </button>
+              <button 
+                :class="['toggle-btn', { active: activeTab === 'attachments' }]" 
+                @click="activeTab = 'attachments'"
+              >
+                <i class="fas fa-paperclip"></i> Attachments
+              </button>
+              <button 
+                :class="['toggle-btn', { active: activeTab === 'tasks' }]" 
+                @click="activeTab = 'tasks'"
+              >
+                <i class="fas fa-tasks"></i> Tasks
+              </button>
+            </div>
+            <div>
+              <button v-if="activeTab === 'notes'" class="primary-btn" @click="addNote">
+                <i class="fas fa-plus"></i> Add Note
+              </button>
+              <button v-if="activeTab === 'attachments'" class="primary-btn">
+                <i class="fas fa-plus"></i> Add Attachment
+              </button>
+              <button v-if="activeTab === 'tasks'" class="primary-btn" @click="showModal = true">
+                <i class="fas fa-plus"></i> Add Task
+              </button>
+            </div>
+          </div>
+          <div class="box-content" :style="{ height: contentSectionHeight + 'px' }">
+            <!-- Notes Content -->
+            <div v-if="activeTab === 'notes'" class="tab-content">
+              <p class="placeholder-text">Customer notes will appear here</p>
+              <!-- Notes will be implemented later -->
+            </div>
+            
+            <!-- Attachments Content -->
+            <div v-if="activeTab === 'attachments'" class="tab-content">
+              <p class="placeholder-text">Customer attachments will appear here</p>
+              <!-- Attachments will be implemented later -->
+            </div>
+            
+            <!-- Tasks Content -->
+            <div v-if="activeTab === 'tasks'" class="tab-content">
+              <p class="placeholder-text">Customer tasks will appear here</p>
+              <!-- Tasks will be implemented later -->
+            </div>
+            
+            <!-- Resizer handle at the bottom of the box -->
+            <div class="resizer" @mousedown="startResize"></div>
           </div>
         </div>
-        
-        <div class="sidebar-panel recent-panel">
-          <h3>Recent Activity</h3>
-          <div class="activity-list">
-            <div class="activity-item">
-              <div class="activity-icon"><i class="fas fa-file-alt"></i></div>
-              <div class="activity-content">
-                <div class="activity-title">Policy Updated</div>
-                <div class="activity-desc">Life insurance coverage increased</div>
-                <div class="activity-time">2 days ago</div>
-              </div>
+      </div>
+
+      <!-- Right Column - Action Items -->
+      <div class="right-column">
+        <div class="box action-items">
+          <div class="box-header">
+            <h2>Action Items</h2>
+          </div>
+          <div class="box-content">
+            <div class="action-buttons">
+              <button class="action-btn" @click="addNewPolicy">
+                <i class="fas fa-file-medical"></i>
+                Add Policy
+              </button>
+              <button class="action-btn" @click="showModal = true">
+                <i class="fas fa-tasks"></i>
+                Add Task
+              </button>
+              <button class="action-btn" @click="addNote">
+                <i class="fas fa-sticky-note"></i>
+                Add Note
+              </button>
+              <button class="action-btn" @click="openACORDForms">
+                <i class="fas fa-file-alt"></i>
+                ACORD Forms
+              </button>
+              <button class="action-btn" @click="addChangeRequest">
+                <i class="fas fa-exchange-alt"></i>
+                Change Request
+              </button>
+              <button class="action-btn" @click="openMailingServices">
+                <i class="fas fa-mail-bulk"></i>
+                Mailing
+              </button>
             </div>
-            <div class="activity-item">
-              <div class="activity-icon"><i class="fas fa-phone"></i></div>
-              <div class="activity-content">
-                <div class="activity-title">Phone Call</div>
-                <div class="activity-desc">Discussed policy options</div>
-                <div class="activity-time">1 week ago</div>
-              </div>
-            </div>
-            <div class="activity-item">
-              <div class="activity-icon"><i class="fas fa-envelope"></i></div>
-              <div class="activity-content">
-                <div class="activity-title">Email Sent</div>
-                <div class="activity-desc">Quote for new home policy</div>
-                <div class="activity-time">Mar 15, 2025</div>
-              </div>
+          </div>
+        </div>
+
+        <!-- Customs Forms Section -->
+        <div class="box custom-forms">
+          <div class="box-header">
+            <h2>Custom Forms</h2>
+          </div>
+          <div class="box-content">
+            <div class="form-buttons">
+              <button class="form-btn">Form 1</button>
+              <button class="form-btn">Form 2</button>
             </div>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- Modal for Add Task -->
+    <AddTask
+      v-if="showModal"
+      :customer-id="customer.CustomerID"
+      :customer-name="customer.FirstName + ' ' + customer.LastName"
+      :created-by-rep="loggedInRepId"
+      :created-by-name="loggedInRepName"
+      :representatives="repList"
+      @close="showModal = false"
+    />
   </div>
+</div>
 </template>
 
 <script setup>
 import AddTask from '@/components/AddTask.vue'
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, onMounted, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import axios from "axios";
 import { url } from "../api/apiurl";
 
-const showModal = ref(false)
+const route = useRoute();
+const showModal = ref(false);
+const loggedInRepId = ref(1); // This should be obtained from your user store
+const loggedInRepName = ref("Agent Name"); // This should be obtained from your user store
+const repList = ref([]); // This should be populated with representatives from your DB
 
 // Insurance type tabs with icons
 const insuranceTypes = [
   { label: 'Life', value: 'LIFE', icon: 'fas fa-heartbeat' },
-  { label: 'Health', value: 'Health', icon: 'fas fa-medkit' },
-  { label: 'Medicare', value: 'Medicare', icon: 'fas fa-hospital' },
-  { label: 'Auto', value: 'Auto', icon: 'fas fa-car' },
+  { label: 'Health', value: 'HEALTH', icon: 'fas fa-medkit' },
+  { label: 'Medicare', value: 'MEDICARE', icon: 'fas fa-hospital' },
   { label: 'Home', value: 'HOME', icon: 'fas fa-home' },
-  { label: 'Other', value: 'Other', icon: 'fas fa-umbrella' }
+  { label: 'Auto', value: 'AUTO', icon: 'fas fa-car' },
+  { label: 'Other', value: 'OTHER', icon: 'fas fa-umbrella' }
 ];
 
-// Customer data (keeping the same data from your original component)
+// Customer data structure
 const customer = reactive({
-  name: 'John Doe',
+  name: '',
   address: {
-    street: '13135 Dairy Ashford Rd',
-    city: 'Sugar Land',
-    state: 'TX',
-    zip: '77478'
+    street: '',
+    city: '',
+    state: '',
+    zip: ''
   },
-  addressVerified: true,
+  addressVerified: false,
   mailingAddress: '',
-  email: 'john.doe@example.com',
+  email: '',
   email2: '',
-  cell: '(555) 123-4567',
+  cell: '',
   phone2: '',
   phone3: '',
   phone4: '',
-  language: 'English',
-  preferredContact: 'Email',
-  ssnTaxId: '***-**-0000',
-  maritalStatus: 'Single',
-  gender: 'Male',
-  id: '173565915',
-  customerType: 'Personal Lines',
-  accountType: 'Prospect',
+  language: '',
+  preferredContact: '',
+  ssnTaxId: '',
+  maritalStatus: '',
+  gender: '',
+  id: '',
+  customerType: '',
+  accountType: '',
   status: 'Active',
-  subStatus: 'None',
-  agentOfRecord: 'Amin Lalani',
-  csr: 'Amin Lalani',
-  keyedBy: 'Amin Lalani',
-  office: 'Main Office',
-  source: 'Personal Contacts',
+  subStatus: '',
+  agentOfRecord: '',
+  csr: '',
+  keyedBy: '',
+  office: '',
+  source: '',
   subSource: '',
-  dateAdded: 'Thu Feb 06, 2025',
-  dob: '01/15/1980',
+  dateAdded: '',
+  dob: '',
   dl: '',
   dlState: '',
   dateLicensed: '',
-  householdSize: '3',
-  peopleApplying: '1',
-  householdIncome: '$85,000',
+  householdSize: '',
+  peopleApplying: '',
+  householdIncome: '',
   preferences: {
     'Do Not Email': 'No',
     'Do Not Text': 'No',
@@ -310,57 +351,40 @@ const customer = reactive({
     'Do Not Capture Email': 'No'
   },
   relationships: [],
-  tags: []
+  tags: [],
+  // Additional fields to match backend data
+  CustomerID: '',
+  FirstName: '',
+  LastName: ''
 });
 
 // Sample policies data
-const policies = reactive([
-  {
-    id: 1,
-    type: 'LIFE',
-    name: 'Term Life Insurance',
-    number: 'LF-7832',
-    coverage: '$750,000',
-    premium: '$125/month',
-    startDate: '03/01/2025',
-    beneficiary: 'Jane Doe'
-  },
-  {
-    id: 2,
-    type: 'LIFE',
-    name: 'Whole Life Policy',
-    number: 'LF-7833',
-    coverage: '$250,000',
-    premium: '$175/month',
-    startDate: '01/15/2025',
-    beneficiary: 'Jane Doe'
-  },
-  {
-    id: 3,
-    type: 'Auto',
-    name: 'Auto Insurance',
-    number: 'AU-5429',
-    coverage: 'Full Coverage',
-    premium: '$98/month',
-    startDate: '02/10/2025'
-  },
-  {
-    id: 4,
-    type: 'HOME',
-    name: 'Homeowners Insurance',
-    number: 'HO-3392',
-    coverage: '$450,000',
-    premium: '$145/month',
-    startDate: '12/20/2024'
-  }
-]);
+const policies = ref([]);
 
 // Active insurance type tab
 const activeInsuranceType = ref('LIFE');
 
-// Get policies by type
+// Fetch policies from backend
+async function getPoliciesFromDB(custid) {
+  try {
+    const response = await axios.get(`${url}/api/customers/${custid}/policies`);
+    policies.value = response.data.map(policy => ({
+      id: policy.PolicyID,
+      type: policy.CategoryName?.toUpperCase() || 'OTHER',
+      name: policy.CompanyName || policy.Issuer || 'Unknown',
+      number: policy.PolicyNumber,
+      coverage: policy.AdditionalInfo || 'N/A',
+      premium: 'N/A', // placeholder
+      startDate: policy.EffectiveDate || 'N/A'
+    }));
+  } catch (err) {
+    console.error("Error loading policies:", err);
+  }
+}
+
+// Used by UI to filter by tab type
 const getPolicies = (type) => {
-  return policies.filter(policy => policy.type === type);
+  return policies.value.filter(policy => policy.type === type);
 };
 
 // Action methods
@@ -389,11 +413,6 @@ const addNote = () => {
   // Implementation would go here
 };
 
-const sendThankYouLetter = () => {
-  console.log('Opening Thank You Letter template...');
-  // Implementation would go here
-};
-
 const addChangeRequest = () => {
   console.log('Opening Add Change Request form...');
   // Implementation would go here
@@ -404,101 +423,138 @@ const openMailingServices = () => {
   // Implementation would go here
 };
 
+// New policy action methods
+const rewritePolicy = (policyId) => {
+  console.log(`Rewriting policy ${policyId}...`);
+  // Implementation would go here
+};
+
+const renewPolicy = (policyId) => {
+  console.log(`Renewing policy ${policyId}...`);
+  // Implementation would go here
+};
+
+const cancelPolicy = (policyId) => {
+  console.log(`Cancelling policy ${policyId}...`);
+  // Implementation would go here
+};
+
 // Function to fetch and update customer information
-// Generated using ChatGPT:
-// Create a function following this initial layout (getCustomer() in ViewCustomer.vue)
-// but with series of customer.key = customerData.value statements similar to customer.name using the keys from this reactive const (customer in ViewCustomer.vue)
-// and this MySQL table's keys (Customer CREATE TABLE from Create_Database_and_Tables.sql)
 async function getCustomer(custid) {
-  axios.get(url + `/api/customer/${custid}`)
-    .then((response) => {
-      const customerData = response.data[0];
+  try {
+    const response = await axios.get(`${url}/api/customer/${custid}`);
+    const customerData = response.data[0];
 
-      if (customerData) {
-        customer.name = customerData.FirstName + " " + customerData.LastName || '';
-        customer.address.street = customerData.Address || '';
-        customer.address.city = customerData.City || '';
-        customer.address.state = customerData.State || '';
-        customer.address.zip = customerData.Zip || '';
-        customer.mailingAddress = customerData.MailingAddress || '';
-        customer.email = customerData.Email1 || '';
-        customer.email2 = customerData.Email2 || '';
-        customer.cell = customerData.Phone1 || '';
-        customer.phone2 = customerData.Phone2 || '';
-        customer.phone3 = customerData.Phone3 || '';
-        customer.phone4 = customerData.BadPhone4 || '';
-        customer.language = customerData.Language || '';
-        customer.preferredContact = customerData.PrefferedContact || '';
-        customer.ssnTaxId = customerData.SocialSecurityNum || '';
-        customer.maritalStatus = customerData.MaritalStatus || '';
-        customer.gender = customerData.Gender || '';
-        customer.id = customerData.CustomerID || '';
-        customer.customerType = customerData.Type || '';
-        customer.accountType = customerData.AccountType || '';
-        customer.status = customerData.ActiveStatus ? 'Active' : 'Inactive';
-        customer.subStatus = customerData.SubsStatus || '';
-        customer.agentOfRecord = customerData.AgentRecordID || '';
-        customer.csr = customerData.RepresentativeID || '';
-        customer.office = customerData.Office || '';
-        customer.source = customerData.Source || '';
-        customer.subSource = customerData.SubSource || '';
-        customer.dateAdded = customerData.DateAdded || '';
-        customer.dob = customerData.DateOfBirth || '';
-        customer.dl = customerData.DriversLicenseNum || '';
-        customer.dlState = customerData.DriversLicenseState || '';
-        customer.householdSize = customerData.HouseholdSize || '';
-        customer.householdIncome = customerData.HouseholdIncome || '';
+    if (customerData) {
+      // Update the customer object with fetched data
+      customer.CustomerID = customerData.CustomerID || '';
+      customer.FirstName = customerData.FirstName || '';
+      customer.LastName = customerData.LastName || '';
+      customer.name = `${customerData.FirstName} ${customerData.LastName}`.trim() || '';
+      customer.address.street = customerData.Address || '';
+      customer.address.city = customerData.City || '';
+      customer.address.state = customerData.State || '';
+      customer.address.zip = customerData.Zip || '';
+      customer.mailingAddress = customerData.MailingAddress || '';
+      customer.email = customerData.Email1 || '';
+      customer.email2 = customerData.Email2 || '';
+      customer.cell = customerData.Phone1 || '';
+      customer.phone2 = customerData.Phone2 || '';
+      customer.phone3 = customerData.Phone3 || '';
+      customer.phone4 = customerData.BadPhone4 || '';
+      customer.language = customerData.Language || '';
+      customer.preferredContact = customerData.PrefferedContact || '';
+      customer.ssnTaxId = customerData.SocialSecurityNum || '';
+      customer.maritalStatus = customerData.MaritalStatus || '';
+      customer.gender = customerData.Gender || '';
+      customer.id = customerData.CustomerID || '';
+      customer.customerType = customerData.Type || '';
+      customer.accountType = customerData.AccountType || '';
+      customer.status = customerData.ActiveStatus ? 'Active' : 'Inactive';
+      customer.subStatus = customerData.SubsStatus || '';
+      customer.agentOfRecord = customerData.AgentRecordID || '';
+      customer.csr = customerData.RepresentativeID || '';
+      customer.office = customerData.Office || '';
+      customer.source = customerData.Source || '';
+      customer.subSource = customerData.SubSource || '';
+      customer.dateAdded = customerData.DateAdded || '';
+      customer.dob = customerData.DateOfBirth || '';
+      customer.dl = customerData.DriversLicenseNum || '';
+      customer.dlState = customerData.DriversLicenseState || '';
+      customer.householdSize = customerData.HouseholdSize || '';
+      customer.householdIncome = customerData.HouseholdIncome || '';
 
-        customer.preferences = {
-          'Do Not Email': customerData.DoNotEmail ? 'Yes' : 'No',
-          'Do Not Text': customerData.DoNotText ? 'Yes' : 'No',
-          'Do Not Call': customerData.DoNotCall ? 'Yes' : 'No',
-          'Do Not Mail': customerData.UndeliverableMail ? 'Yes' : 'No',
-          'Do Not Market': customerData.DoNotMarket ? 'Yes' : 'No',
-          'Do Not Capture Email': customerData.DoNotCaptureEmail ? 'Yes' : 'No'
-        };
-      }
-      else {
-          throw new Error ("No customer data returned");
-      }
-    })
-    .catch((error) => {
-      console.error('Error fetching customer data:', error);
-    });
+      customer.preferences = {
+        'Do Not Email': customerData.DoNotEmail ? 'Yes' : 'No',
+        'Do Not Text': customerData.DoNotText ? 'Yes' : 'No',
+        'Do Not Call': customerData.DoNotCall ? 'Yes' : 'No',
+        'Do Not Mail': customerData.UndeliverableMail ? 'Yes' : 'No',
+        'Do Not Market': customerData.DoNotMarket ? 'Yes' : 'No',
+        'Do Not Capture Email': customerData.DoNotCaptureEmail ? 'Yes' : 'No'
+      };
+    } else {
+      throw new Error("No customer data returned");
+    }
+  } catch (error) {
+    console.error('Error fetching customer data:', error);
+  }
 }
 
+// Watch for changes in the route parameter and fetch the customer data
+watch(
+  () => route.params.id,
+  async (newId) => {
+    if (newId) {
+      await getCustomer(newId);
+      await getPoliciesFromDB(newId);
+    }
+  }
+);
+
 // Lifecycle hook
-onMounted(async () => {
-  console.log('Updated customer profile component mounted');
-  // TODO: Update input to a passed prop when page is loaded
-  // getCustomer(2) returns the default values
-  getCustomer(2);
-  // getCustomer(3) tests if error catch works (check console)
-  //getCustomer(3);
-  // DO NOT run both at the same time; will crash flask
+onMounted( async () => {
+  console.log('Customer profile component mounted');
+  
+  // Get the customer ID from the route params
+  const customerId = route.params.id;
+  
+  await getCustomer(customerId);
+  await getPoliciesFromDB(customerId);
+
+  console.log("Fetched policies:", policies.value);
+  
+  // If no ID in route, use a default
+  if (customerId) {
+    getCustomer(customerId);
+  } else {
+    // Use a default ID for the ex_cust route
+    getCustomer(2);
+  }
+  
+  // Fetch representatives for the AddTask component
+  // This should be implemented to fetch actual representatives from your database
+  repList.value = [
+    { RepresentativeID: 1, FirstName: 'Amin', LastName: 'Lalani' },
+    { RepresentativeID: 2, FirstName: 'John', LastName: 'Doe' }
+  ];
 });
 </script>
 
 <style scoped>
-/* Base Styles */
-/* Base Styles */
-html, body {
-  margin: 0;
-  padding: 0;
-  width: 100%;
+.view-customer-container {
   height: 100%;
-  overflow-x: hidden;
+  width: 100%;
 }
 
-.profile-container {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  padding-top: 65px;
-  background-color: #121212;
-  color: #f5f5f5;
+.text-color{
+  color: #333;
+}
+/* Main Container */
+.customer-profile-container {
+  max-width: 100%;
+  margin: 60px auto 0;
+  padding: 0 20px 20px;
+  background-color: #f5f5f5;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
@@ -507,525 +563,423 @@ html, body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 24px;
-  background-color: #1e1e1e;
-  border-bottom: 1px solid #333;
-  height: 60px;
-  width: 100%;
-  box-sizing: border-box;
+  padding: 15px 0;
+  border-bottom: 1px solid #ddd;
+  margin-bottom: 20px;
 }
 
-.customer-title {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.customer-title h1 {
-  font-size: 18px;
-  margin: 0;
-  color: #fff;
-  font-weight: 600;
+.customer-info h1 {
+  font-size: 24px;
+  margin: 0 0 5px 0;
+  color: #333;
 }
 
 .customer-id {
-  color: #aaa;
   font-size: 14px;
+  color: #666;
+  margin-right: 10px;
 }
 
-.quick-actions {
+.status-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: bold;
+  background-color: #e0e0e0;
+}
+
+.status-badge.active {
+  background-color: #4caf50;
+  color: white;
+}
+
+.status-badge.inactive {
+  background-color: #f44336;
+  color: white;
+}
+
+.header-actions {
   display: flex;
   gap: 10px;
 }
 
 .icon-btn {
-  background-color: #2d2d2d;
-  border: none;
-  color: #f5f5f5;
   width: 36px;
   height: 36px;
   border-radius: 4px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  color: #007bff;
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
 }
 
 .icon-btn:hover {
-  background-color: #444;
+  background-color: #f0f0f0;
 }
 
-/* Badge */
-.badge {
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: 12px;
-  font-size: 12px;
-  background-color: #2b90c5;
-  color: white;
-}
-
-.badge.active {
-  background-color: #2ecc71;
-}
-
-.badge.inactive {
-  background-color: #e74c3c;
-}
-
-.sub-status {
-  background-color: #444;
-}
-
-/* Main Layout */
-.profile-layout {
+/* Content Layout */
+.profile-content {
   display: flex;
-  flex: 1;
-  width: 100%;
-  overflow: hidden;
-  box-sizing: border-box;
+  gap: 20px;
 }
 
-/* Sidebar Styling */
-.sidebar {
-  width: 20%;
-  min-width: 240px;
-  overflow-y: auto;
-  padding: 16px;
-  background-color: #121212;
-  box-sizing: border-box;
+.left-column {
+  width: 25%;
+  min-width: 250px;
 }
 
-.sidebar-panel {
-  background-color: #1e1e1e;
-  border: 1px solid #333;
-  border-radius: 6px;
-  padding: 16px;
-  margin-bottom: 16px;
-}
-
-.sidebar-panel h3 {
-  margin-top: 0;
-  margin-bottom: 16px;
-  font-size: 15px;
-  color: #fff;
-  font-weight: 600;
-}
-
-.sidebar-panel h4 {
-  font-size: 13px;
-  color: #aaa;
-  margin: 10px 0 5px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-weight: 500;
-}
-
-/* Customer Info Panel */
-.customer-panel {
-  height: auto;
-}
-
-.info-section {
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #333;
-}
-
-.info-section:last-child {
-  border-bottom: none;
-  margin-bottom: 0;
-  padding-bottom: 0;
-}
-
-.info-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  margin-bottom: 8px;
-  font-size: 13px;
-  color: #f5f5f5;
-}
-
-.info-item i {
-  width: 16px;
-  color: #aaa;
-}
-
-.info-item address {
-  font-style: normal;
-}
-
-/* Main Content */
-.main-content {
+.center-column {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 16px;
-  background-color: #121212;
-  min-width: 50%;
-  box-sizing: border-box;
+  gap: 20px;
 }
 
-/* Insurance Type Tabs */
+.right-column {
+  width: 20%;
+  min-width: 200px;
+}
+
+/* Box Styling */
+.box {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.box-header {
+  padding: 12px 15px;
+  border-bottom: 1px solid #e0e0e0;
+  background-color: #f8f9fa;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.box-header h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.box-content {
+  padding: 15px;
+}
+
+/* Customer Details */
+.info-row {
+  display: flex;
+  margin-bottom: 8px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.info-label {
+  width: 130px;
+  font-weight: 600;
+  color: #555;
+}
+
+.info-value {
+  flex: 1;
+  color: #333;
+}
+
+/* Insurance Tabs */
 .insurance-tabs {
   display: flex;
-  gap: 4px;
-  margin-bottom: 16px;
-  background-color: #1e1e1e;
-  padding: 6px;
-  border-radius: 6px;
+  gap: 5px;
+  overflow-x: auto;
+  padding-bottom: 5px;
 }
 
 .tab-btn {
-  padding: 8px 16px;
+  padding: 8px 12px;
+  background-color: #f0f0f0;
   border: none;
-  background-color: transparent;
-  color: #aaa;
-  cursor: pointer;
-  font-size: 13px;
   border-radius: 4px;
-  transition: all 0.2s;
+  font-size: 14px;
+  color: #555;
+  cursor: pointer;
+  white-space: nowrap;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
 }
 
 .tab-btn i {
   font-size: 14px;
 }
 
-.tab-btn:hover {
-  background-color: #2d2d2d;
-  color: #fff;
-}
-
 .tab-btn.active {
-  background-color: #2d2d2d;
-  color: #fff;
-  font-weight: 500;
+  background-color: #007bff;
+  color: white;
 }
 
-/* Policy Content Area */
-.policy-content {
-  flex: 1;
-  background-color: #1e1e1e;
-  border-radius: 6px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.policy-header {
-  padding: 16px;
+/* Policies Section */
+.policies-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #333;
+  margin-bottom: 15px;
 }
 
-.policy-header h3 {
+.policies-header h3 {
   margin: 0;
   font-size: 16px;
-  color: #fff;
+  font-weight: 600;
+  color: #333;
 }
 
-.add-policy-btn {
-  background-color: #2b90c5;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 13px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: background-color 0.2s;
-}
-
-.add-policy-btn:hover {
-  background-color: #1e7eb1;
-}
-
-.add-policy-btn i {
-  font-size: 12px;
-}
-
-/* Policy List */
-.policy-list {
-  flex: 1;
-  padding: 16px;
-  overflow-y: auto;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
-}
-
-.policy-card {
-  background-color: #2d2d2d;
-  border-radius: 6px;
-  overflow: hidden;
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.policy-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.policy-card-header {
-  padding: 12px 16px;
-  background-color: #333;
-  border-bottom: 1px solid #444;
-}
-
-.policy-card-header h4 {
-  margin: 0 0 4px 0;
-  font-size: 14px;
-  color: #fff;
-}
-
-.policy-number {
-  font-size: 12px;
-  color: #aaa;
-}
-
-.policy-card-body {
-  padding: 16px;
-}
-
-.policy-detail {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 8px;
-  font-size: 13px;
-}
-
-.detail-label {
-  color: #aaa;
-}
-
-.detail-value {
-  font-weight: 500;
-}
-
-.policy-card-footer {
-  padding: 12px 16px;
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  border-top: 1px solid #444;
-}
-
-.small-btn {
-  padding: 6px 12px;
-  background-color: transparent;
-  color: #f5f5f5;
-  border: 1px solid #555;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
-  transition: all 0.2s;
-}
-
-.small-btn:hover {
-  background-color: #444;
-}
-
-/* Empty State */
-.no-policies {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
+.policies-table {
   width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
 }
 
-.empty-state {
+.policies-table th,
+.policies-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.policies-table th {
+  font-weight: 600;
+  color: #555;
+  background-color: #f5f5f5;
+}
+
+.no-policies {
   text-align: center;
   padding: 30px;
+  color: #666;
 }
 
-.empty-state i {
-  font-size: 48px;
-  color: #555;
-  margin-bottom: 16px;
+/* Dropdown Button */
+.dropdown {
+  position: relative;
+  display: inline-block;
 }
 
-.empty-state p {
-  color: #aaa;
-  margin-bottom: 16px;
+.dropdown-btn {
+  background-color: #007bff;
+  color: white;
+  padding: 6px 12px;
+  font-size: 14px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
 }
 
-/* Right Sidebar */
-.right-sidebar {
-  background-color: #121212;
-  width: 20%;
-  min-width: 240px;
+.dropdown-content {
+  display: none;
+  position: absolute;
+  right: 0;
+  background-color: #f9f9f9;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1;
+  border-radius: 4px;
 }
 
-/* Action Items */
-.action-panel {
-  margin-bottom: 16px;
+.dropdown-content a {
+  color: black;
+  padding: 8px 12px;
+  text-decoration: none;
+  display: block;
+  font-size: 14px;
 }
 
-.action-list {
+.dropdown-content a:hover {
+  background-color: #f1f1f1;
+}
+
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+
+/* Action Buttons */
+.action-buttons {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .action-btn {
-  padding: 12px;
-  background-color: #2d2d2d;
-  color: #f5f5f5;
-  border: none;
+  padding: 10px 15px;
+  background-color: #fff;
+  border: 1px solid #ddd;
   border-radius: 4px;
+  font-size: 14px;
+  color: #333;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 10px;
+  transition: all 0.2s;
   text-align: left;
-  font-size: 13px;
-  transition: background-color 0.2s;
 }
 
 .action-btn i {
+  color: #007bff;
   width: 16px;
   text-align: center;
-  color: #2b90c5;
 }
 
 .action-btn:hover {
-  background-color: #3a3a3a;
+  background-color: #f8f9fa;
+  border-color: #c0c0c0;
 }
 
-/* Recent Activity */
-.activity-list {
+/* Form Buttons */
+.form-buttons {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
-.activity-item {
-  display: flex;
-  gap: 12px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #333;
+.form-btn {
+  padding: 10px 15px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.activity-item:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
+.form-btn:hover {
+  background-color: #f8f9fa;
+  border-color: #c0c0c0;
 }
 
-.activity-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background-color: #2d2d2d;
+/* Primary Button */
+.primary-btn {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
   display: flex;
   align-items: center;
-  justify-content: center;
-  color: #2b90c5;
+  gap: 5px;
+  transition: background-color 0.2s;
 }
 
-.activity-content {
-  flex: 1;
+.primary-btn:hover {
+  background-color: #0069d9;
 }
 
-.activity-title {
-  font-size: 13px;
-  font-weight: 500;
-  color: #f5f5f5;
-  margin-bottom: 2px;
+/* Combined Section Styles */
+.combined-section {
+  position: relative;
 }
 
-.activity-desc {
-  font-size: 12px;
-  color: #aaa;
-  margin-bottom: 4px;
+.tab-toggle {
+  display: flex;
+  gap: 5px;
 }
 
-.activity-time {
-  font-size: 11px;
-  color: #777;
+.toggle-btn {
+  padding: 8px 12px;
+  background-color: #f0f0f0;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #555;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
-/* Responsive Layout */
+.toggle-btn.active {
+  background-color: #007bff;
+  color: white;
+}
+
+.tab-content {
+  height: 100%;
+  overflow-y: auto;
+}
+
+/* Resizer styles */
+.resizer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background-color: transparent;
+  cursor: ns-resize;
+  transition: background-color 0.2s;
+}
+
+.resizer:hover {
+  background-color: rgba(0, 123, 255, 0.1);
+}
+
+.resizer:after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 30px;
+  height: 4px;
+  border-radius: 2px;
+  background-color: #ddd;
+}
+
+/* Notes and Attachments Placeholder */
+.placeholder-text {
+  color: #999;
+  text-align: center;
+  font-style: italic;
+  padding: 20px;
+}
+
+/* Responsive Designs */
 @media (max-width: 1200px) {
-  .policy-list {
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  .profile-content {
+    flex-wrap: wrap;
   }
   
-  .sidebar {
-    width: 25%;
+  .left-column, .right-column {
+    width: 100%;
   }
-}
-
-@media (max-width: 992px) {
-  .sidebar {
-    width: 30%;
-    min-width: 200px;
+  
+  .center-column {
+    order: -1;
+    width: 100%;
   }
 }
 
 @media (max-width: 768px) {
-  .profile-layout {
-    flex-direction: column;
-  }
-  
-  .sidebar {
-    width: 100%;
-    max-height: none;
-    overflow: visible;
-    padding: 8px 16px;
-    min-width: unset;
-  }
-  
-  .main-content {
-    padding: 8px 16px;
-    min-width: unset;
-  }
-  
-  .policy-list {
-    grid-template-columns: 1fr;
-  }
-  
-  .action-list {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 480px) {
   .profile-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 10px;
-    height: auto;
-    padding: 12px 16px;
   }
   
-  .quick-actions {
-    width: 100%;
-    justify-content: flex-end;
-  }
-  
-  .action-list {
-    grid-template-columns: 1fr;
+  .header-actions {
+    align-self: flex-end;
   }
   
   .insurance-tabs {
-    overflow-x: auto;
-    padding: 4px;
-  }
-  
-  .tab-btn {
-    padding: 8px 12px;
-    white-space: nowrap;
+    flex-wrap: wrap;
   }
 }
 </style>

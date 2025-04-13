@@ -1,11 +1,19 @@
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import axios from 'axios'
+import { url } from "../api/apiurl"
 
+const router = useRouter()
+const isLoading = ref(false)
+const errors = ref({})
+
+// Initialize the customer object with all required fields
 const customer = reactive({
-  type: '',
-  fullName: '',
-  name: '',
-  name2: '',
+  type: 'Personal Lines',
+  firstName: '',
+  middleName: '',
+  lastName: '',
   suffix: '',
   title: '',
   salutation: '',
@@ -15,20 +23,20 @@ const customer = reactive({
   address: '',
   zip: '',
   city: '',
-  state: '',
+  state: 'TX',
   addressVerified: false,
   sameAddress: false,
   mailingCountry: 'United States',
   mailingAddress: '',
   mailingZip: '',
   mailingCity: '',
-  mailingState: '',
+  mailingState: 'TX',
   cell: '',
   phone2: '',
   phone3: '',
   phone4: '',
   driversLicense: '',
-  dlState: '',
+  dlState: 'TX',
   dateLicensed: '',
   dateOfBirth: '',
   ssn: '',
@@ -56,516 +64,992 @@ const customer = reactive({
   undeliverableEmail2: false
 })
 
-const hideCustomer = () => {
-  // Implement hide customer logic
+// When "Same Address" is checked, copy physical address to mailing address
+const handleSameAddressChange = () => {
+  if (customer.sameAddress) {
+    customer.mailingAddress = customer.address
+    customer.mailingZip = customer.zip
+    customer.mailingCity = customer.city
+    customer.mailingState = customer.state
+    customer.mailingCountry = customer.country
+  } else {
+    // Clear mailing address fields if unchecked
+    customer.mailingAddress = ''
+    customer.mailingZip = ''
+    customer.mailingCity = ''
+    customer.mailingState = ''
+  }
 }
 
-const verifyMailingAddress = () => {
-  // Implement mailing address verification logic
+// Function to validate form
+const validateForm = () => {
+  const newErrors = {}
+  
+  // Required fields validation
+  if (!customer.firstName.trim()) newErrors.firstName = 'First name is required'
+  if (!customer.lastName.trim()) newErrors.lastName = 'Last name is required'
+  if (!customer.address.trim()) newErrors.address = 'Address is required'
+  if (!customer.city.trim()) newErrors.city = 'City is required'
+  if (!customer.zip.trim()) newErrors.zip = 'ZIP code is required'
+  
+  // Email validation if provided
+  if (customer.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer.email)) {
+    newErrors.email = 'Please enter a valid email address'
+  }
+  
+  // Phone validation if provided
+  if (customer.cell && !/^\d{10}$/.test(customer.cell.replace(/\D/g, ''))) {
+    newErrors.cell = 'Please enter a valid 10-digit phone number'
+  }
+  
+  // Date validation if provided
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/ // YYYY-MM-DD format for input type="date"
+  
+  if (customer.dateOfBirth && !dateRegex.test(customer.dateOfBirth)) {
+    newErrors.dateOfBirth = 'Please enter a valid date (YYYY-MM-DD)'
+  }
+  
+  if (customer.dateLicensed && !dateRegex.test(customer.dateLicensed)) {
+    newErrors.dateLicensed = 'Please enter a valid date (YYYY-MM-DD)'
+  }
+  
+  // Set errors and return validation result
+  errors.value = newErrors
+  return Object.keys(newErrors).length === 0
 }
 
-const saveCustomer = () => {
-  // Implement save customer logic
+// Function to save the customer
+const saveCustomer = async () => {
+  // Validate the form first
+  if (!validateForm()) {
+    // Scroll to the first error
+    const firstErrorEl = document.querySelector('.error-message')
+    if (firstErrorEl) {
+      firstErrorEl.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+    return
+  }
+  
+  try {
+    isLoading.value = true
+    
+    // Format customer data for API
+    const customerData = {
+      FirstName: customer.firstName,
+      MiddleName: customer.middleName || null,
+      LastName: customer.lastName,
+      Suffix: customer.suffix || null,
+      Title: customer.title || null,
+      Salutation: customer.salutation || null,
+      ActiveStatus: customer.activeStatus === 'Active' ? 1 : 0,
+      Country: customer.country,
+      USAResidentStatus: customer.isUsaCitizen ? "Citizen" : "Non-Citizen",
+      Address: customer.address,
+      Zip: customer.zip,
+      City: customer.city,
+      State: customer.state,
+      SameMailingAddress: customer.sameAddress ? 1 : 0,
+      MailingCountry: customer.mailingCountry,
+      MailingAddress: customer.mailingAddress,
+      MailingZip: customer.mailingZip,
+      MailingCity: customer.mailingCity,
+      MailingState: customer.mailingState,
+      Phone1: customer.cell,
+      Phone2: customer.phone2 || null,
+      Phone3: customer.phone3 || null,
+      BadPhone4: customer.phone4 || null,
+      DriversLicenseNum: customer.driversLicense || null,
+      DriversLicenseState: customer.dlState || null,
+      DateOfBirth: customer.dateOfBirth || null,
+      SocialSecurityNum: customer.ssn || null,
+      Gender: customer.gender || null,
+      MaritalStatus: customer.maritalStatus || null,
+      HouseholdSize: customer.householdSize || null,
+      HouseholdIncome: customer.householdIncome || null,
+      Email1: customer.email || null,
+      Email2: customer.email2 || null,
+      Website: customer.website || null,
+      PrefferedContact: customer.preferredContact,
+      DoNotEmail: customer.doNotEmail ? 1 : 0,
+      DoNotText: customer.doNotText ? 1 : 0,
+      DoNotCall: customer.doNotCall ? 1 : 0,
+      DoNotMarket: customer.doNotMarket ? 1 : 0,
+      DoNotCaptureEmail: customer.doNotCaptureEmail ? 1 : 0,
+      UndeliverableMail: customer.undeliverableMail ? 1 : 0,
+      BadPhone1: customer.badCell ? customer.cell : null,
+      BadPhone2: customer.badPhone2 ? customer.phone2 : null,
+      BadPhone3: customer.badPhone3 ? customer.phone3 : null,
+      UndeliverableEmail1: customer.undeliverableEmail1 ? 1 : 0,
+      UndeliverableEmail2: customer.undeliverableEmail2 ? 1 : 0,
+      Type: customer.type
+    }
+    
+    console.log('Sending customer data:', customerData)
+    
+    // Make the actual API call
+    const response = await axios.post(`${url}/api/Customer`, customerData)
+    
+    if (response.data && response.data.CustomerID) {
+      alert('Customer added successfully!')
+      // Redirect to the newly created customer's profile
+      router.push(`/customer/${response.data.CustomerID}`)
+    } else {
+      // We received a response but no customer ID
+      alert('Customer may not have been properly saved. Please check your data.')
+      router.push('/')
+    }
+  } catch (error) {
+    console.error('Error saving customer:', error)
+    alert('Failed to save customer. Please try again.')
+  } finally {
+    isLoading.value = false
+  }
 }
 
+// Function to handle address verification
+const verifyAddress = async () => {
+  // This would normally call an address verification API
+  // For now, just simulate the process
+  
+  if (!customer.address || !customer.city || !customer.state || !customer.zip) {
+    alert('Please fill in all address fields before verification.')
+    return
+  }
+  
+  isLoading.value = true
+  
+  // Simulate API call delay
+  setTimeout(() => {
+    customer.addressVerified = true
+    isLoading.value = false
+    alert('Address has been verified successfully!')
+  }, 1000)
+}
+
+// Function to verify mailing address
+const verifyMailingAddress = async () => {
+  if (!customer.mailingAddress || !customer.mailingCity || !customer.mailingState || !customer.mailingZip) {
+    alert('Please fill in all mailing address fields before verification.')
+    return
+  }
+  
+  isLoading.value = true
+  
+  // Simulate API call delay
+  setTimeout(() => {
+    isLoading.value = false
+    alert('Mailing address has been verified successfully!')
+  }, 1000)
+}
+
+// Function to cancel and return to previous page
 const cancelEdit = () => {
-  // Implement cancel edit logic
+  router.go(-1) // Go back to previous page
 }
+
+// US States for dropdown
+const usStates = [
+  { value: 'AL', name: 'Alabama' },
+  { value: 'AK', name: 'Alaska' },
+  { value: 'AZ', name: 'Arizona' },
+  { value: 'AR', name: 'Arkansas' },
+  { value: 'CA', name: 'California' },
+  { value: 'CO', name: 'Colorado' },
+  { value: 'CT', name: 'Connecticut' },
+  { value: 'DE', name: 'Delaware' },
+  { value: 'FL', name: 'Florida' },
+  { value: 'GA', name: 'Georgia' },
+  { value: 'HI', name: 'Hawaii' },
+  { value: 'ID', name: 'Idaho' },
+  { value: 'IL', name: 'Illinois' },
+  { value: 'IN', name: 'Indiana' },
+  { value: 'IA', name: 'Iowa' },
+  { value: 'KS', name: 'Kansas' },
+  { value: 'KY', name: 'Kentucky' },
+  { value: 'LA', name: 'Louisiana' },
+  { value: 'ME', name: 'Maine' },
+  { value: 'MD', name: 'Maryland' },
+  { value: 'MA', name: 'Massachusetts' },
+  { value: 'MI', name: 'Michigan' },
+  { value: 'MN', name: 'Minnesota' },
+  { value: 'MS', name: 'Mississippi' },
+  { value: 'MO', name: 'Missouri' },
+  { value: 'MT', name: 'Montana' },
+  { value: 'NE', name: 'Nebraska' },
+  { value: 'NV', name: 'Nevada' },
+  { value: 'NH', name: 'New Hampshire' },
+  { value: 'NJ', name: 'New Jersey' },
+  { value: 'NM', name: 'New Mexico' },
+  { value: 'NY', name: 'New York' },
+  { value: 'NC', name: 'North Carolina' },
+  { value: 'ND', name: 'North Dakota' },
+  { value: 'OH', name: 'Ohio' },
+  { value: 'OK', name: 'Oklahoma' },
+  { value: 'OR', name: 'Oregon' },
+  { value: 'PA', name: 'Pennsylvania' },
+  { value: 'RI', name: 'Rhode Island' },
+  { value: 'SC', name: 'South Carolina' },
+  { value: 'SD', name: 'South Dakota' },
+  { value: 'TN', name: 'Tennessee' },
+  { value: 'TX', name: 'Texas' },
+  { value: 'UT', name: 'Utah' },
+  { value: 'VT', name: 'Vermont' },
+  { value: 'VA', name: 'Virginia' },
+  { value: 'WA', name: 'Washington' },
+  { value: 'WV', name: 'West Virginia' },
+  { value: 'WI', name: 'Wisconsin' },
+  { value: 'WY', name: 'Wyoming' }
+]
 </script>
 
 <template>
-    <div class="customer-edit-container">
-      <h2>Add Customer</h2>
-      <input type="checkbox" class="hide-button" @click="hideCustomer">Hide This Customer</input>
-      
-      <div class="form-row">
-        <div class="form-group">
-          <label for="customer-type">Customer Type</label>
-          <select id="customer-type" v-model="customer.type">
-            <option value="Personal Lines">Personal Lines</option>
-            <option value="Commercial">Commercial</option>
-          </select>
-        </div>
-        
-        <div class="form-group">
-          <label for="first-middle-last">First Middle Last</label>
-          <input type="text" id="first-middle-last" v-model="customer.fullName">
-        </div>
-      </div>
-      
-      <div class="form-row">
-        <div class="form-group">
-          <label for="name">Name</label>
-          <input type="text" id="name" v-model="customer.name">
-        </div>
-        
-        <div class="form-group">
-          <label for="name2">Name 2</label>
-          <input type="text" id="name2" v-model="customer.name2">
-        </div>
-      </div>
-      
-      <div class="form-row">
-        <div class="form-group">
-          <label for="suffix">Suffix</label>
-          <input type="text" id="suffix" v-model="customer.suffix">
-        </div>
-        
-        <div class="form-group">
-          <label for="title">Title</label>
-          <input type="text" id="title" v-model="customer.title">
-        </div>
-        
-        <div class="form-group">
-          <label for="salutation">Salutation</label>
-          <input type="text" id="salutation" v-model="customer.salutation">
-        </div>
-      </div>
-      
-      <div class="form-row">
-        <div class="form-group">
-          <label for="active-status">Active Status</label>
-          <select id="active-status" v-model="customer.activeStatus">
-            <option value="Active">Active</option>
-            <option value="Inactive">Inactive</option>
-          </select>
-        </div>
-        
-        <div class="form-group">
-          <label for="country">Country</label>
-          <select id="country" v-model="customer.country">
-            <option value="United States">United States</option>
-            <option value="Canada">Canada</option>
-            <option value="Other">Other</option>
-          </select>
-        </div>
-        
-        <div class="form-group">
-          <label for="is-usa-citizen">Is USA Citizen?</label>
-          <div class="checkbox-group">
-            <input type="checkbox" id="is-usa-citizen" v-model="customer.isUsaCitizen">
-            <span>Yes</span>
-          </div>
-        </div>
-      </div>
-      
-      <div class="form-row">
-        <div class="form-group">
-          <label for="address">Address</label>
-          <input type="text" id="address" v-model="customer.address">
-        </div>
-      </div>
-      
-      <div class="form-row">
-        <div class="form-group">
-          <label for="zip">Zip:</label>
-          <input type="text" id="zip" v-model="customer.zip">
-        </div>
-        
-        <div class="form-group">
-          <label for="city">City:</label>
-          <input type="text" id="city" v-model="customer.city">
-        </div>
-        
-        <div class="form-group">
-          <label for="state">State:</label>
-          <select id="state" v-model="customer.state">
-            <option value="TX">TX</option>
-            <option value="AL">AL</option>
-            <option value="AK">AK</option>
-            <!-- Add other states as needed -->
-          </select>
-        </div>
-      </div>
-      
-      <div class="form-row">
-        <div class="form-group">
-          <div class="checkbox-group">
-            <input type="checkbox" id="address-verified" v-model="customer.addressVerified">
-            <label for="address-verified">Address Verified</label>
-          </div>
-        </div>
-        
-        <div class="form-group">
-          <div class="checkbox-group">
-            <input type="checkbox" id="same-address" v-model="customer.sameAddress">
-            <label for="same-address">Same Address</label>
-          </div>
-        </div>
-      </div>
-      
-      <div class="form-row">
-        <div class="form-group">
-          <label for="mailing-country">Mailing Country</label>
-          <select id="mailing-country" v-model="customer.mailingCountry">
-            <option value="United States">United States</option>
-            <option value="Canada">Canada</option>
-            <option value="Other">Other</option>
-          </select>
-        </div>
-      </div>
-      
-      <div class="form-row">
-        <div class="form-group">
-          <label for="mailing-address">Mailing Address</label>
-          <input type="text" id="mailing-address" v-model="customer.mailingAddress">
-        </div>
-      </div>
-      
-      <div class="form-row">
-        <div class="form-group">
-          <label for="mailing-zip">Mailing Zip</label>
-          <input type="text" id="mailing-zip" v-model="customer.mailingZip">
-        </div>
-        
-        <div class="form-group">
-          <label for="mailing-city">Mailing City</label>
-          <input type="text" id="mailing-city" v-model="customer.mailingCity">
-        </div>
-        
-        <div class="form-group">
-          <label for="mailing-state">Mailing State</label>
-          <select id="mailing-state" v-model="customer.mailingState">
-            <option value="" disabled>-- SELECT STATE --</option>
-            <option value="TX">TX</option>
-            <option value="AL">AL</option>
-            <option value="AK">AK</option>
-            <!-- Add other states as needed -->
-          </select>
-        </div>
-      </div>
-      
-      <div class="form-row">
-        <div class="form-group">
-          <a href="#" class="verify-link" @click.prevent="verifyMailingAddress">Click here to verify the new mailing address</a>
-        </div>
-      </div>
-      
-      <div class="form-row">
-        <div class="form-group">
-          <label for="cell">Cell</label>
-          <input type="tel" id="cell" v-model="customer.cell">
-        </div>
-        
-        <div class="form-group">
-          <label for="phone2">Phone 2</label>
-          <input type="tel" id="phone2" v-model="customer.phone2">
-        </div>
-      </div>
-      
-      <div class="form-row">
-        <div class="form-group">
-          <label for="phone3">Phone 3</label>
-          <input type="tel" id="phone3" v-model="customer.phone3">
-        </div>
-        
-        <div class="form-group">
-          <label for="phone4">Phone 4</label>
-          <input type="tel" id="phone4" v-model="customer.phone4">
-        </div>
-      </div>
-      
-      <div class="form-row">
-        <div class="form-group">
-          <label for="drivers-license">Drivers License</label>
-          <input type="text" id="drivers-license" v-model="customer.driversLicense">
-        </div>
-        
-        <div class="form-group">
-          <label for="dl-state">DL State</label>
-          <select id="dl-state" v-model="customer.dlState">
-            <option value="" disabled>Select a State</option>
-            <option value="TX">TX</option>
-            <option value="AL">AL</option>
-            <option value="AK">AK</option>
-            <!-- Add other states as needed -->
-          </select>
-        </div>
-      </div>
-      
-      <div class="form-row">
-        <div class="form-group">
-          <label for="date-licensed">Date Licensed MM/DD/YYYY</label>
-          <input type="text" id="date-licensed" v-model="customer.dateLicensed" placeholder="MM/DD/YYYY">
-        </div>
-      </div>
-      
-      <div class="form-row">
-        <div class="form-group">
-          <label for="dob">Date of Birth MM/DD/YYYY</label>
-          <input type="text" id="dob" v-model="customer.dateOfBirth" placeholder="MM/DD/YYYY">
-        </div>
-        
-        <div class="form-group">
-          <label for="ssn">SSN/Tax ID</label>
-          <input type="text" id="ssn" v-model="customer.ssn" placeholder="000000000">
-        </div>
-      </div>
-      
-      <div class="form-row">
-        <div class="form-group">
-          <label for="gender">Gender</label>
-          <select id="gender" v-model="customer.gender">
-            <option value=""></option>
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-          </select>
-        </div>
-        
-        <div class="form-group">
-          <label for="marital-status">Marital Status</label>
-          <select id="marital-status" v-model="customer.maritalStatus">
-            <option value=""></option>
-            <option value="Single">Single</option>
-            <option value="Married">Married</option>
-            <option value="Divorced">Divorced</option>
-            <option value="Widowed">Widowed</option>
-          </select>
-        </div>
-      </div>
-      
-      <div class="form-row">
-        <div class="form-group">
-          <label for="household-size">Household Size</label>
-          <input type="text" id="household-size" v-model="customer.householdSize">
-        </div>
-        
-        <div class="form-group">
-          <label for="people-applying">How many people applying</label>
-          <input type="text" id="people-applying" v-model="customer.peopleApplying">
-        </div>
-      </div>
-      
-      <div class="form-row">
-        <div class="form-group">
-          <label for="household-income">Household Income (Total)</label>
-          <input type="text" id="household-income" v-model="customer.householdIncome">
-        </div>
-      </div>
-      
-      <div class="form-row">
-        <div class="form-group">
-          <label for="email">Email</label>
-          <input type="email" id="email" v-model="customer.email">
-        </div>
-        
-        <div class="form-group">
-          <label for="email2">Email 2</label>
-          <input type="email" id="email2" v-model="customer.email2">
-        </div>
-      </div>
-      
-      <div class="form-row">
-        <div class="form-group">
-          <label for="website">Website</label>
-          <input type="url" id="website" v-model="customer.website" placeholder="https://">
-        </div>
-        
-        <div class="form-group">
-          <label for="preferred-contact">Preferred Contact</label>
-          <select id="preferred-contact" v-model="customer.preferredContact">
-            <option value="None">None</option>
-            <option value="Email">Email</option>
-            <option value="Phone">Phone</option>
-            <option value="Text">Text</option>
-            <option value="Mail">Mail</option>
-          </select>
-        </div>
-      </div>
-      
-      <div class="form-row">
-        <div class="form-group checkbox-group">
-          <input type="checkbox" id="do-not-email" v-model="customer.doNotEmail">
-          <label for="do-not-email">Do Not Email</label>
-        </div>
-        
-        <div class="form-group checkbox-group">
-          <input type="checkbox" id="do-not-text" v-model="customer.doNotText">
-          <label for="do-not-text">Do Not Text</label>
-        </div>
-        
-        <div class="form-group checkbox-group">
-          <input type="checkbox" id="do-not-call" v-model="customer.doNotCall">
-          <label for="do-not-call">Do Not Call</label>
-        </div>
-      </div>
-      
-      <div class="form-row">
-        <div class="form-group checkbox-group">
-          <input type="checkbox" id="do-not-mail" v-model="customer.doNotMail">
-          <label for="do-not-mail">Do Not Mail</label>
-        </div>
-        
-        <div class="form-group checkbox-group">
-          <input type="checkbox" id="do-not-market" v-model="customer.doNotMarket">
-          <label for="do-not-market">Do Not Market</label>
-        </div>
-        
-        <div class="form-group checkbox-group">
-          <input type="checkbox" id="do-not-capture-email" v-model="customer.doNotCaptureEmail">
-          <label for="do-not-capture-email">Do Not Capture Email</label>
-        </div>
-      </div>
-      
-      <div class="form-row">
-        <div class="form-group checkbox-group">
-          <input type="checkbox" id="undeliverable-mail" v-model="customer.undeliverableMail">
-          <label for="undeliverable-mail">Undeliverable Mail</label>
-        </div>
-        
-        <div class="form-group checkbox-group">
-          <input type="checkbox" id="bad-cell" v-model="customer.badCell">
-          <label for="bad-cell">Bad Cell</label>
-        </div>
-        
-        <div class="form-group checkbox-group">
-          <input type="checkbox" id="bad-phone-2" v-model="customer.badPhone2">
-          <label for="bad-phone-2">Bad Phone 2</label>
-        </div>
-      </div>
-      
-      <div class="form-row">
-        <div class="form-group checkbox-group">
-          <input type="checkbox" id="bad-phone-3" v-model="customer.badPhone3">
-          <label for="bad-phone-3">Bad Phone 3</label>
-        </div>
-        
-        <div class="form-group checkbox-group">
-          <input type="checkbox" id="bad-phone-4" v-model="customer.badPhone4">
-          <label for="bad-phone-4">Bad Phone 4</label>
-        </div>
-        
-        <div class="form-group checkbox-group">
-          <input type="checkbox" id="undeliverable-email-1" v-model="customer.undeliverableEmail1">
-          <label for="undeliverable-email-1">Undeliverable Email 1</label>
-        </div>
-      </div>
-      
-      <div class="form-row">
-      <div class="form-group checkbox-group">
-        <input type="checkbox" id="undeliverable-email-2" v-model="customer.undeliverableEmail2">
-        <label for="undeliverable-email-2">Undeliverable Email 2</label>
+  <div class="add-customer-container">
+    <div class="page-header">
+      <h1 class="page-title">Add New Customer</h1>
+      <div class="actions">
+        <button @click="cancelEdit" class="secondary-btn">
+          <i class="fas fa-arrow-left"></i> Cancel
+        </button>
       </div>
     </div>
 
-    <div class="form-actions">
-      <button @click="saveCustomer" class="save-button">Save Changes</button>
-      <button @click="cancelEdit" class="cancel-button">Cancel</button>
+    <div class="form-container">
+      <!-- Loading overlay -->
+      <div v-if="isLoading" class="loading-overlay">
+        <div class="spinner"></div>
+        <p>Processing...</p>
+      </div>
+
+      <form @submit.prevent="saveCustomer" class="customer-form">
+        <!-- Basic Information Section -->
+        <div class="form-section">
+          <h2 class="section-title">Basic Information</h2>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="customer-type">Customer Type <span class="required">*</span></label>
+              <select id="customer-type" v-model="customer.type" class="input-field">
+                <option value="Personal Lines">Personal Lines</option>
+                <option value="Commercial">Commercial</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="first-name">First Name <span class="required">*</span></label>
+              <input 
+                type="text" 
+                id="first-name" 
+                v-model="customer.firstName" 
+                class="input-field" 
+                :class="{ 'error-input': errors.firstName }"
+                required
+              >
+              <span v-if="errors.firstName" class="error-message">{{ errors.firstName }}</span>
+            </div>
+            
+            <div class="form-group">
+              <label for="middle-name">Middle Name</label>
+              <input type="text" id="middle-name" v-model="customer.middleName" class="input-field">
+            </div>
+            
+            <div class="form-group">
+              <label for="last-name">Last Name <span class="required">*</span></label>
+              <input 
+                type="text" 
+                id="last-name" 
+                v-model="customer.lastName" 
+                class="input-field"
+                :class="{ 'error-input': errors.lastName }"
+                required
+              >
+              <span v-if="errors.lastName" class="error-message">{{ errors.lastName }}</span>
+            </div>
+            
+            <div class="form-group">
+              <label for="suffix">Suffix</label>
+              <input type="text" id="suffix" v-model="customer.suffix" class="input-field">
+            </div>
+            
+            <div class="form-group">
+              <label for="title">Title</label>
+              <input type="text" id="title" v-model="customer.title" class="input-field">
+            </div>
+            
+            <div class="form-group">
+              <label for="salutation">Salutation</label>
+              <input type="text" id="salutation" v-model="customer.salutation" class="input-field">
+            </div>
+            
+            <div class="form-group">
+              <label for="status">Status</label>
+              <select id="status" v-model="customer.activeStatus" class="input-field">
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="country">Country</label>
+              <select id="country" v-model="customer.country" class="input-field">
+                <option value="United States">United States</option>
+                <option value="Canada">Canada</option>
+                <option value="Mexico">Mexico</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            
+            <div class="form-group checkbox-group">
+              <input type="checkbox" id="us-citizen" v-model="customer.isUsaCitizen">
+              <label for="us-citizen">US Citizen</label>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Physical Address Section -->
+        <div class="form-section">
+          <h2 class="section-title">Physical Address</h2>
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <label for="address">Street Address <span class="required">*</span></label>
+              <input 
+                type="text" 
+                id="address" 
+                v-model="customer.address" 
+                class="input-field"
+                :class="{ 'error-input': errors.address }"
+                required
+              >
+              <span v-if="errors.address" class="error-message">{{ errors.address }}</span>
+            </div>
+            
+            <div class="form-group">
+              <label for="city">City <span class="required">*</span></label>
+              <input 
+                type="text" 
+                id="city" 
+                v-model="customer.city" 
+                class="input-field"
+                :class="{ 'error-input': errors.city }"
+                required
+              >
+              <span v-if="errors.city" class="error-message">{{ errors.city }}</span>
+            </div>
+            
+            <div class="form-group">
+              <label for="state">State <span class="required">*</span></label>
+              <select 
+                id="state" 
+                v-model="customer.state" 
+                class="input-field"
+                required
+              >
+                <option v-for="state in usStates" :key="state.value" :value="state.value">
+                  {{ state.value }} - {{ state.name }}
+                </option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="zip">ZIP Code <span class="required">*</span></label>
+              <input 
+                type="text" 
+                id="zip" 
+                v-model="customer.zip" 
+                class="input-field"
+                :class="{ 'error-input': errors.zip }"
+                required
+              >
+              <span v-if="errors.zip" class="error-message">{{ errors.zip }}</span>
+            </div>
+            
+            <div class="form-group address-actions">
+              <button type="button" @click="verifyAddress" class="action-btn">
+                <i class="fas fa-check-circle"></i> Verify Address
+              </button>
+              
+              <div class="checkbox-group">
+                <input type="checkbox" id="address-verified" v-model="customer.addressVerified">
+                <label for="address-verified">Address Verified</label>
+              </div>
+              
+              <div class="checkbox-group">
+                <input type="checkbox" id="same-address" v-model="customer.sameAddress" @change="handleSameAddressChange">
+                <label for="same-address">Same as Mailing Address</label>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Mailing Address Section -->
+        <div class="form-section" :class="{ 'disabled-section': customer.sameAddress }">
+          <h2 class="section-title">Mailing Address</h2>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="mailing-country">Country</label>
+              <select id="mailing-country" v-model="customer.mailingCountry" class="input-field" :disabled="customer.sameAddress">
+                <option value="United States">United States</option>
+                <option value="Canada">Canada</option>
+                <option value="Mexico">Mexico</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            
+            <div class="form-group full-width">
+              <label for="mailing-address">Street Address</label>
+              <input type="text" id="mailing-address" v-model="customer.mailingAddress" class="input-field" :disabled="customer.sameAddress">
+            </div>
+            
+            <div class="form-group">
+              <label for="mailing-city">City</label>
+              <input type="text" id="mailing-city" v-model="customer.mailingCity" class="input-field" :disabled="customer.sameAddress">
+            </div>
+            
+            <div class="form-group">
+              <label for="mailing-state">State</label>
+              <select id="mailing-state" v-model="customer.mailingState" class="input-field" :disabled="customer.sameAddress">
+                <option v-for="state in usStates" :key="state.value" :value="state.value">
+                  {{ state.value }} - {{ state.name }}
+                </option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="mailing-zip">ZIP Code</label>
+              <input type="text" id="mailing-zip" v-model="customer.mailingZip" class="input-field" :disabled="customer.sameAddress">
+            </div>
+            
+            <div class="form-group" v-if="!customer.sameAddress">
+              <button type="button" @click="verifyMailingAddress" class="action-btn">
+                <i class="fas fa-check-circle"></i> Verify Mailing Address
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Contact Information Section -->
+        <div class="form-section">
+          <h2 class="section-title">Contact Information</h2>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="cell">Cell Phone <span class="required">*</span></label>
+              <input 
+                type="tel" 
+                id="cell" 
+                v-model="customer.cell" 
+                class="input-field"
+                :class="{ 'error-input': errors.cell }"
+                placeholder="(XXX) XXX-XXXX"
+                required
+              >
+              <span v-if="errors.cell" class="error-message">{{ errors.cell }}</span>
+            </div>
+            
+            <div class="form-group">
+              <label for="phone2">Alternate Phone</label>
+              <input type="tel" id="phone2" v-model="customer.phone2" class="input-field" placeholder="(XXX) XXX-XXXX">
+            </div>
+            
+            <div class="form-group">
+              <label for="phone3">Work Phone</label>
+              <input type="tel" id="phone3" v-model="customer.phone3" class="input-field" placeholder="(XXX) XXX-XXXX">
+            </div>
+            
+            <div class="form-group">
+              <label for="phone4">Other Phone</label>
+              <input type="tel" id="phone4" v-model="customer.phone4" class="input-field" placeholder="(XXX) XXX-XXXX">
+            </div>
+            
+            <div class="form-group">
+              <label for="email">Email <span class="required">*</span></label>
+              <input 
+                type="email" 
+                id="email" 
+                v-model="customer.email" 
+                class="input-field"
+                :class="{ 'error-input': errors.email }"
+                required
+              >
+              <span v-if="errors.email" class="error-message">{{ errors.email }}</span>
+            </div>
+            
+            <div class="form-group">
+              <label for="email2">Secondary Email</label>
+              <input type="email" id="email2" v-model="customer.email2" class="input-field">
+            </div>
+            
+            <div class="form-group">
+              <label for="website">Website</label>
+              <input type="url" id="website" v-model="customer.website" class="input-field" placeholder="https://">
+            </div>
+            
+            <div class="form-group">
+              <label for="preferred-contact">Preferred Contact Method</label>
+              <select id="preferred-contact" v-model="customer.preferredContact" class="input-field">
+                <option value="None">None</option>
+                <option value="Email">Email</option>
+                <option value="Phone">Phone</option>
+                <option value="Text">Text</option>
+                <option value="Mail">Mail</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Personal Details Section -->
+        <div class="form-section">
+          <h2 class="section-title">Personal Details</h2>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="dob">Date of Birth</label>
+              <input 
+                type="date" 
+                id="dob" 
+                v-model="customer.dateOfBirth" 
+                class="input-field"
+                :class="{ 'error-input': errors.dateOfBirth }"
+              >
+              <span v-if="errors.dateOfBirth" class="error-message">{{ errors.dateOfBirth }}</span>
+            </div>
+            
+            <div class="form-group">
+              <label for="gender">Gender</label>
+              <select id="gender" v-model="customer.gender" class="input-field">
+                <option value=""></option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Non-Binary">Non-Binary</option>
+                <option value="Other">Other</option>
+                <option value="Prefer not to say">Prefer not to say</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="marital-status">Marital Status</label>
+              <select id="marital-status" v-model="customer.maritalStatus" class="input-field">
+                <option value=""></option>
+                <option value="Single">Single</option>
+                <option value="Married">Married</option>
+                <option value="Divorced">Divorced</option>
+                <option value="Widowed">Widowed</option>
+                <option value="Separated">Separated</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="ssn">SSN/Tax ID</label>
+              <input type="text" id="ssn" v-model="customer.ssn" class="input-field" placeholder="XXX-XX-XXXX">
+            </div>
+            
+            <div class="form-group">
+              <label for="drivers-license">Driver's License #</label>
+              <input type="text" id="drivers-license" v-model="customer.driversLicense" class="input-field">
+            </div>
+            
+            <div class="form-group">
+              <label for="dl-state">DL State</label>
+              <select id="dl-state" v-model="customer.dlState" class="input-field">
+                <option v-for="state in usStates" :key="state.value" :value="state.value">
+                  {{ state.value }}
+                </option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="date-licensed">Date Licensed</label>
+              <input 
+                type="date" 
+                id="date-licensed" 
+                v-model="customer.dateLicensed" 
+                class="input-field"
+                :class="{ 'error-input': errors.dateLicensed }"
+              >
+              <span v-if="errors.dateLicensed" class="error-message">{{ errors.dateLicensed }}</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Household Information Section -->
+        <div class="form-section">
+          <h2 class="section-title">Household Information</h2>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="household-size">Household Size</label>
+              <input type="number" id="household-size" v-model="customer.householdSize" class="input-field" min="1">
+            </div>
+            
+            <div class="form-group">
+              <label for="people-applying">People Applying</label>
+              <input type="number" id="people-applying" v-model="customer.peopleApplying" class="input-field" min="1">
+            </div>
+            
+            <div class="form-group">
+              <label for="household-income">Household Income ($)</label>
+              <input type="number" id="household-income" v-model="customer.householdIncome" class="input-field" min="0">
+            </div>
+          </div>
+        </div>
+        
+        <!-- Preferences Section -->
+        <div class="form-section">
+          <h2 class="section-title">Contact Preferences</h2>
+          <div class="form-grid preferences-grid">
+            <div class="form-group checkbox-group">
+              <input type="checkbox" id="do-not-email" v-model="customer.doNotEmail">
+              <label for="do-not-email">Do Not Email</label>
+            </div>
+            
+            <div class="form-group checkbox-group">
+              <input type="checkbox" id="do-not-text" v-model="customer.doNotText">
+              <label for="do-not-text">Do Not Text</label>
+            </div>
+            
+            <div class="form-group checkbox-group">
+              <input type="checkbox" id="do-not-call" v-model="customer.doNotCall">
+              <label for="do-not-call">Do Not Call</label>
+            </div>
+            
+            <div class="form-group checkbox-group">
+              <input type="checkbox" id="do-not-mail" v-model="customer.doNotMail">
+              <label for="do-not-mail">Do Not Mail</label>
+            </div>
+            
+            <div class="form-group checkbox-group">
+              <input type="checkbox" id="do-not-market" v-model="customer.doNotMarket">
+              <label for="do-not-market">Do Not Market</label>
+            </div>
+            
+            <div class="form-group checkbox-group">
+              <input type="checkbox" id="do-not-capture-email" v-model="customer.doNotCaptureEmail">
+              <label for="do-not-capture-email">Do Not Capture Email</label>
+            </div>
+            
+            <div class="form-group checkbox-group">
+              <input type="checkbox" id="undeliverable-mail" v-model="customer.undeliverableMail">
+              <label for="undeliverable-mail">Undeliverable Mail</label>
+            </div>
+            
+            <div class="form-group checkbox-group">
+              <input type="checkbox" id="bad-cell" v-model="customer.badCell">
+              <label for="bad-cell">Bad Cell</label>
+            </div>
+            
+            <div class="form-group checkbox-group">
+              <input type="checkbox" id="bad-phone-2" v-model="customer.badPhone2">
+              <label for="bad-phone-2">Bad Phone 2</label>
+            </div>
+            
+            <div class="form-group checkbox-group">
+              <input type="checkbox" id="bad-phone-3" v-model="customer.badPhone3">
+              <label for="bad-phone-3">Bad Phone 3</label>
+            </div>
+            
+            <div class="form-group checkbox-group">
+              <input type="checkbox" id="bad-phone-4" v-model="customer.badPhone4">
+              <label for="bad-phone-4">Bad Phone 4</label>
+            </div>
+            
+            <div class="form-group checkbox-group">
+              <input type="checkbox" id="undeliverable-email-1" v-model="customer.undeliverableEmail1">
+              <label for="undeliverable-email-1">Undeliverable Email 1</label>
+            </div>
+            
+            <div class="form-group checkbox-group">
+              <input type="checkbox" id="undeliverable-email-2" v-model="customer.undeliverableEmail2">
+              <label for="undeliverable-email-2">Undeliverable Email 2</label>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Form Actions -->
+        <div class="form-actions">
+          <button type="submit" class="primary-btn">
+            <i class="fas fa-save"></i> Save Customer
+          </button>
+          <button type="button" @click="cancelEdit" class="secondary-btn">
+            <i class="fas fa-times"></i> Cancel
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 </template>
 
-
-<style scoped>
-.customer-edit-container {
+<style>
+/* Main Container Styles */
+.add-customer-container {
   width: 100%;
-  max-width: 800px;
-  margin: 40px; /* Centers the container horizontally */
+  max-width: 1200px;
+  margin: 60px auto 0;
   padding: 20px;
-  /* Remove any alignment that might be pushing it to the right */
-  float: none;
-  position: static;
+  background-color: #f9f9f9;
+  color: #333;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-/* This targets the parent container if there's one wrapping your form */
-body, main, #app, .content-wrapper {
+/* Page Header */
+.page-header {
   display: flex;
-  flex-direction: column;
-  align-items: center; /* Centers child elements horizontally */
-  width: 100%;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #ddd;
 }
 
-/* Make sure any parent containers don't have padding that's offsetting the centering */
-body, #app, main, .content-wrapper {
-  padding-left: 0;
-  padding-right: 0;
+.page-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
 }
 
-/* Ensure all form rows are centered */
-.form-row {
+.actions {
   display: flex;
-  flex-wrap: wrap;
-  margin-bottom: 15px;
-  width: 100%;
-  justify-content: center; /* Center the form rows */
+  gap: 10px;
 }
 
-/* Make form elements consistent width */
+/* Form Container */
+.form-container {
+  position: relative;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+}
+
+/* Form Sections */
+.form-section {
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.form-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 15px 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+/* Form Grid */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 15px;
+}
+
+.full-width {
+  grid-column: 1 / -1;
+}
+
+.preferences-grid {
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+
+/* Form Groups */
 .form-group {
-  flex: 1;
-  margin-right: 15px;
-  max-width: 100%; /* Prevent overflow */
+  margin-bottom: 15px;
 }
 
-.form-group:last-child {
-  margin-right: 0;
-}
-
-label {
+.form-group label {
   display: block;
   margin-bottom: 5px;
+  font-weight: 500;
+  color: #555;
+  font-size: 14px;
 }
 
-input[type="text"],
-input[type="tel"],
-input[type="email"],
-input[type="url"],
-select {
+.required {
+  color: #dc3545;
+  margin-left: 3px;
+}
+
+.input-field {
   width: 100%;
-  padding: 8px;
-  border: 1px solid #ccc;
+  padding: 10px;
+  border: 1px solid #ddd;
   border-radius: 4px;
+  font-size: 14px;
+  background-color: #fff;
+  transition: border-color 0.2s ease;
 }
 
+.input-field:focus {
+  border-color: #007bff;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.input-field:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.error-input {
+  border-color: #dc3545;
+}
+
+.error-message {
+  display: block;
+  color: #dc3545;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+/* Checkbox Groups */
 .checkbox-group {
   display: flex;
   align-items: center;
+  margin-bottom: 0;
 }
 
 .checkbox-group input[type="checkbox"] {
-  margin-right: 5px;
+  margin-right: 8px;
 }
 
+.checkbox-group label {
+  margin-bottom: 0;
+  cursor: pointer;
+}
+
+/* Address Actions */
+.address-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  grid-column: 1 / -1;
+}
+
+/* Disabled Section */
+.disabled-section {
+  opacity: 0.7;
+  position: relative;
+}
+
+.disabled-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.5);
+  z-index: 1;
+  pointer-events: none;
+  border-radius: 8px;
+}
+
+/* Form Actions */
 .form-actions {
-  margin-top: 20px;
-  text-align: right;
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
 }
 
-.save-button,
-.cancel-button {
+/* Button Styles */
+.primary-btn,
+.secondary-btn,
+.action-btn {
   padding: 10px 20px;
-  margin-left: 10px;
   border: none;
   border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
 }
 
-.save-button {
-  background-color: #4CAF50;
+.primary-btn {
+  background-color: #007bff;
   color: white;
 }
 
-.cancel-button {
-  background-color: #f44336;
+.primary-btn:hover {
+  background-color: #0069d9;
+}
+
+.secondary-btn {
+  background-color: #6c757d;
   color: white;
 }
 
-.hide-button {
-  background-color: #2196F3;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 4px;
-  cursor: pointer;
-  margin-bottom: 20px;
+.secondary-btn:hover {
+  background-color: #5a6268;
 }
 
-.verify-link {
-  color: #2196F3;
-  text-decoration: none;
+.action-btn {
+  background-color: #f8f9fa;
+  color: #495057;
+  border: 1px solid #ddd;
 }
 
-.verify-link:hover {
-  text-decoration: underline;
+.action-btn:hover {
+  background-color: #e9ecef;
+}
+
+/* Loading Overlay */
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  border-radius: 8px;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid rgba(0, 123, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #007bff;
+  animation: spin 1s ease-in-out infinite;
+  margin-bottom: 10px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+  .add-customer-container {
+    padding: 15px;
+    margin-top: 50px;
+  }
+  
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
+  
+  .primary-btn, .secondary-btn {
+    width: 100%;
+    justify-content: center;
+  }
 }
 </style>
