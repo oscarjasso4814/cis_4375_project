@@ -211,9 +211,7 @@
           <div class="box-content">
             <div class="policies-header">
               <h3>{{ activeInsuranceType }} Insurance Policies</h3>
-              <button class="primary-btn" @click="addNewPolicy">
-                <i class="fas fa-plus"></i> Add Policy
-              </button>
+              
             </div>
             
             <!-- Line item view for policies -->
@@ -227,6 +225,7 @@
                       <th>Coverage</th>
                       <th>Premium</th>
                       <th>Start Date</th>
+                      <th>End Date</th>
                       <th>Action</th>
                     </tr>
                   </thead>
@@ -237,6 +236,7 @@
                       <td>{{ policy.coverage }}</td>
                       <td>{{ policy.premium }}</td>
                       <td>{{ policy.startDate }}</td>
+                      <td>{{ policy.endDate }}</td>
                       <td>
                         <div class="dropdown">
                           <button class="dropdown-btn">
@@ -385,7 +385,16 @@
       @close="showModal = false"
     />
   </div>
+  <!-- Modal for Add Policy -->
+    <AddPolicyModal
+      v-if="showPolicyModal"
+      :customer-id="customer.id"
+      :customer-name="customer.name"
+      @close="showPolicyModal = false"
+      @policy-added="handlePolicyAdded"
+    />
 </div>
+
 </template>
 
 <script setup>
@@ -394,6 +403,7 @@ import { ref, reactive, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import axios from "axios";
 import { url } from "../api/apiurl";
+import AddPolicyModal from '../components/AddPolicy.vue';
 
 
 function formatDate(dateString) {
@@ -517,8 +527,9 @@ async function getPoliciesFromDB(custid) {
       name: policy.CompanyName || policy.Issuer || 'Unknown',
       number: policy.PolicyNumber,
       coverage: policy.AdditionalInfo || 'N/A',
-      premium: 'N/A', // placeholder
-      startDate: policy.EffectiveDate || 'N/A'
+      premium: policy.Premium,
+      startDate: policy.EffectiveDate || 'N/A',
+      endDate: policy.ExpirationDate || 'N/A',
     }));
   } catch (err) {
     console.error("Error loading policies:", err);
@@ -598,10 +609,6 @@ const openACORDForms = () => {
   // Implementation would go here
 };
 
-const addNewPolicy = () => {
-  console.log('Opening Add New Policy form...');
-  // Implementation would go here
-};
 
 const addNote = () => {
   console.log('Opening Add Note form...');
@@ -755,6 +762,25 @@ watch(
     }
   }
 );
+
+const showPolicyModal = ref(false);
+
+const addNewPolicy = () => {
+  console.log("Opening policy modal for customer ID:", customer.id);
+  showPolicyModal.value = true;
+};
+
+
+// Function to handle policy added event
+const handlePolicyAdded = async (policyData) => {
+  console.log("Policy added successfully:", policyData);
+  // Show a success message to the user
+  alert(`Policy added successfully! Policy ID: ${policyData.PolicyID}`);
+  // Refresh policies list
+  await getPoliciesFromDB(customer.id);
+};
+
+
 
 // Lifecycle hook
 onMounted( async () => {
@@ -1230,6 +1256,7 @@ onMounted( async () => {
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
+  max-height: 60vh;
 }
 
 .policies-table th,
@@ -1302,12 +1329,13 @@ onMounted( async () => {
 }
 
 .action-btn {
+  background-color: #007bff;
+  color: white;
   padding: 10px 15px;
-  background-color: #fff;
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 14px;
-  color: #333;
+
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -1324,7 +1352,8 @@ onMounted( async () => {
 
 .action-btn:hover {
   background-color: #f8f9fa;
-  border-color: #c0c0c0;
+  color: #007bff;
+  border-color: #007bff;
 }
 
 /* Form Buttons */
@@ -1452,7 +1481,18 @@ onMounted( async () => {
     order: -1;
     width: 100%;
   }
+
+  .center-column .box-content {
+  height: 70vh; /* 70% of the viewport height */
+  overflow-y: auto; /* Add scroll if content overflows */
 }
+}
+
+.center-column .box-content {
+  height: 40vh; /* 70% of the viewport height */
+  overflow-y: auto; /* Add scroll if content overflows */
+}
+
 
 @media (max-width: 768px) {
   .profile-header {

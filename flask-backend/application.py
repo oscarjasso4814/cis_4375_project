@@ -774,6 +774,7 @@ def get_policies_for_customer(customer_id):
             p.EffectiveDate,
             p.ExpirationDate,
             p.AdditionalInfo,
+            p.Premium,
             c.CategoryName,
             co.CompanyName,
             p.Issuer
@@ -937,6 +938,140 @@ def delete_customer_relationship(relationship_id):
     conn.commit()
     return jsonify({'message': 'Relationship deleted'})
 
+
+# API for adding a new policy
+@application.route('/api/policy', methods=['POST'])
+def add_policy():
+    try:
+        # Get JSON data from request
+        data = request.get_json()
+        
+        # Create SQL query for inserting a new policy
+        sql = """
+        INSERT INTO Policy (
+            CompanyID, AgentRecordID, CategoryID, SubcategoryID, 
+            RepresentativeID, PolicyNumber, Issuer, 
+            EffectiveDate, ExpirationDate, AdditionalInfo, Premium, CustomerID
+        ) VALUES (
+            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+        )
+        """
+        
+        # Prepare values for insertion
+        values = (
+            data.get('CompanyID'), 
+            data.get('AgentRecordID'),
+            data.get('CategoryID'),
+            data.get('SubcategoryID'),
+            data.get('RepresentativeID'),
+            data.get('PolicyNumber'),
+            data.get('Issuer'),
+            data.get('EffectiveDate'),
+            data.get('ExpirationDate'),
+            data.get('AdditionalInfo'),
+            data.get('Premium'),
+            data.get('CustomerID')
+        )
+        
+        # Execute the SQL query
+        cursor.execute(sql, values)
+        
+        # Get the ID of the last inserted row
+        policy_id = cursor.lastrowid
+        
+        # Commit the changes
+        conn.commit()
+        
+        # Return the newly created policy ID
+        return jsonify({
+            'message': 'Policy added successfully',
+            'PolicyID': policy_id
+        }), 201
+        
+    except Exception as e:
+        # Log the error
+        print(f"Error adding policy: {str(e)}")
+        
+        # Roll back any changes if an error occurs
+        conn.rollback()
+        
+        # Return error response
+        return jsonify({
+            'error': 'Failed to add policy',
+            'details': str(e)
+        }), 500
+
+# API for getting categories
+@application.route('/api/categories', methods=['GET'])
+def get_categories():
+    try:
+        sql = "SELECT CategoryID, CategoryName FROM Category"
+        cursor.execute(sql)
+        categories = cursor.fetchall()
+        return jsonify(categories)
+    except Exception as e:
+        print(f"Error fetching categories: {str(e)}")
+        return jsonify({
+            'error': 'Failed to fetch categories',
+            'details': str(e)
+        }), 500
+
+# API for getting subcategories by category
+@application.route('/api/categories/<int:category_id>/subcategories', methods=['GET'])
+def get_subcategories(category_id):
+    try:
+        sql = "SELECT SubcategoryID, SubcategoryName FROM Subcategory WHERE CategoryID = %s"
+        cursor.execute(sql, (category_id,))
+        subcategories = cursor.fetchall()
+        return jsonify(subcategories)
+    except Exception as e:
+        print(f"Error fetching subcategories: {str(e)}")
+        return jsonify({
+            'error': 'Failed to fetch subcategories',
+            'details': str(e)
+        }), 500
+
+# API for getting companies
+@application.route('/api/companies', methods=['GET'])
+def get_companies():
+    try:
+        sql = "SELECT CompanyID, CompanyName FROM Company"
+        cursor.execute(sql)
+        companies = cursor.fetchall()
+        return jsonify(companies)
+    except Exception as e:
+        print(f"Error fetching companies: {str(e)}")
+        return jsonify({
+            'error': 'Failed to fetch companies',
+            'details': str(e)
+        }), 500
+
+# API for getting agents of record
+@application.route('/api/agents', methods=['GET'])
+def get_agents():
+    try:
+        sql = """
+
+            SELECT 
+                a.AgentRecordID,
+                r.RepresentativeID,
+                CONCAT_WS(' ', r.FirstName, r.MiddleName, r.LastName, r.Suffix) AS FullName,
+                a.StartDate,
+                a.EndDate,
+                a.Status,
+                a.Notes
+            FROM AgentOfRecord a
+            JOIN Representative r ON a.RepresentativeID = r.RepresentativeID;
+        """
+        cursor.execute(sql)
+        agents = cursor.fetchall()
+        return jsonify(agents)
+    except Exception as e:
+        print(f"Error fetching agents: {str(e)}")
+        return jsonify({
+            'error': 'Failed to fetch agents',
+            'details': str(e)
+        }), 500
 
 if __name__ == "__main__":
     application.run(debug=True, threaded=True)
