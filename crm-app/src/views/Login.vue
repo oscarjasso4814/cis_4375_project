@@ -55,9 +55,7 @@ onMounted(async () => {
       TotalWorkedTime: totalWorkedTime.value
     });
   }
-  if (user) {
-    clearUser();
-  }
+  clearUser();
 });
 
 //Old Test Code
