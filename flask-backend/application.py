@@ -48,12 +48,17 @@ def get_tasks():
             t.CreatedByRepresentativeID,
             c.FirstName AS CustomerFirstName,
             c.LastName AS CustomerLastName,
-            r.FirstName AS AssignedFirstName,
-            r.LastName AS AssignedLastName
-        FROM Task t
-        LEFT JOIN Customer c ON t.CustomerID = c.CustomerID
-        LEFT JOIN Representative r ON t.AssignedRepresentativeID = r.RepresentativeID
-    """
+            a.FirstName AS AssignedFirstName,
+            a.LastName AS AssignedLastName,
+            cr.FirstName AS CreatedByFirstName,
+            cr.LastName AS CreatedByLastName
+
+            FROM Task t
+            LEFT JOIN Customer c ON t.CustomerID = c.CustomerID
+            LEFT JOIN Representative a ON t.AssignedRepresentativeID = a.RepresentativeID
+            LEFT JOIN Representative cr ON t.CreatedByRepresentativeID = cr.RepresentativeID
+
+        """
     cursor.execute(sql)
     rows = cursor.fetchall()
 
