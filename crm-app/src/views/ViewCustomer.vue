@@ -210,7 +210,6 @@
           </div>
           <div class="box-content">
             <div class="policies-header">
-              <h3>{{ activeInsuranceType }} Insurance Policies</h3>
               
             </div>
             
@@ -550,6 +549,9 @@ const newHouseholdMember = ref({
 const activeTab = ref('notes');
 const contentSectionHeight = ref(300); // Default height
 
+const sortColumn = ref('status'); // Default sort by Status
+const sortDirection = ref('asc'); // Default ascending order
+
 // Updated function to fetch policies from the backend
 async function getPoliciesFromDB(custid) {
   try {
@@ -645,15 +647,80 @@ async function deactivateHouseholdMember(memberId) {
 }
 
 // Used by UI to filter by tab type and sort by expiration date
+// Update getPolicies function to include sorting
 const getPolicies = (type) => {
   return policies.value
     .filter(policy => policy.type === type)
     .sort((a, b) => {
-      // Sort by expiration date in descending order (most recent first)
-      const dateA = a.endDate ? new Date(a.endDate) : new Date(0);
-      const dateB = b.endDate ? new Date(b.endDate) : new Date(0);
-      return dateB - dateA;
+      let valueA, valueB;
+      
+      // Get the proper values based on sortColumn
+      switch (sortColumn.value) {
+        case 'status':
+          valueA = a.status || 'Active';
+          valueB = b.status || 'Active';
+          break;
+        case 'company':
+          valueA = a.companyName || '';
+          valueB = b.companyName || '';
+          break;
+        case 'category':
+          valueA = a.categoryName || '';
+          valueB = b.categoryName || '';
+          break;
+        case 'number':
+          valueA = a.number || '';
+          valueB = b.number || '';
+          break;
+        case 'coverage':
+          valueA = a.coverage || '';
+          valueB = b.coverage || '';
+          break;
+        case 'premium':
+          valueA = parseFloat(a.premium) || 0;
+          valueB = parseFloat(b.premium) || 0;
+          break;
+        case 'startDate':
+          valueA = a.startDate ? new Date(a.startDate) : new Date(0);
+          valueB = b.startDate ? new Date(b.startDate) : new Date(0);
+          break;
+        case 'endDate':
+          valueA = a.endDate ? new Date(a.endDate) : new Date(0);
+          valueB = b.endDate ? new Date(b.endDate) : new Date(0);
+          break;
+        case 'agent':
+          valueA = a.agentName || '';
+          valueB = b.agentName || '';
+          break;
+        default:
+          valueA = a[sortColumn.value] || '';
+          valueB = b[sortColumn.value] || '';
+      }
+      
+      // Sort based on sort direction
+      const direction = sortDirection.value === 'asc' ? 1 : -1;
+      
+      // Compare values based on their type
+      if (valueA instanceof Date && valueB instanceof Date) {
+        return direction * (valueA - valueB);
+      } else if (typeof valueA === 'number' && typeof valueB === 'number') {
+        return direction * (valueA - valueB);
+      } else {
+        return direction * String(valueA).localeCompare(String(valueB));
+      }
     });
+};
+
+// Add a function to handle header clicks
+const handleSort = (column) => {
+  if (sortColumn.value === column) {
+    // Toggle direction if clicking the same column
+    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc';
+  } else {
+    // Set new column and default to ascending
+    sortColumn.value = column;
+    sortDirection.value = 'asc';
+  }
 };
 
 // Check if a policy can be modified (can't modify already canceled/renewed/rewritten policies)
@@ -1694,6 +1761,23 @@ tr.rewritten {
   font-size: 13px;
 }
 
+.sortable-header {
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  padding-right: 20px; /* Make room for sort icon */
+}
+
+.sort-icon {
+  position: absolute;
+  right: 5px;
+  color: #777;
+}
+
+.sort-icon .fa-sort-up,
+.sort-icon .fa-sort-down {
+  color: #007bff;
+}
 
 
 </style>

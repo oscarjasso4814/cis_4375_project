@@ -3,10 +3,7 @@
       <div class="modal-content">
         <h3>{{ modalTitle }}</h3>
     
-        <div class="customer-info">
-          <p><strong>Customer:</strong> {{ customerName }}</p>
-          <p><strong>Policy Number:</strong> {{ policy.policyNumber }}</p>
-        </div>
+
     
         <!-- Loading indicator -->
         <div v-if="isLoading" class="loading-container">
