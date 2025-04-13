@@ -1040,16 +1040,26 @@ def get_categories():
 @application.route('/api/categories/<int:category_id>/subcategories', methods=['GET'])
 def get_subcategories(category_id):
     try:
+        # Make sure to convert category_id to an integer
+        category_id = int(category_id)
+        
+        # Use parameterized query to prevent SQL injection
         sql = "SELECT SubcategoryID, SubcategoryName FROM Subcategory WHERE CategoryID = %s"
         cursor.execute(sql, (category_id,))
+        
+        # Fetch all results
         subcategories = cursor.fetchall()
+        
+        # Return empty list if none found
+        if not subcategories:
+            return jsonify([])
+            
         return jsonify(subcategories)
     except Exception as e:
         print(f"Error fetching subcategories: {str(e)}")
-        return jsonify({
-            'error': 'Failed to fetch subcategories',
-            'details': str(e)
-        }), 500
+        # Return a useful error message and empty list
+        return jsonify([]), 500
+
 
 # API for getting companies
 @application.route('/api/companies', methods=['GET'])

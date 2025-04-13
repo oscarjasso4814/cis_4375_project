@@ -335,34 +335,45 @@
   
   // Load subcategories when category changes
   async function loadSubcategories() {
-    if (!updatedPolicy.categoryId) return;
+  if (!updatedPolicy.categoryId) return;
+  
+  try {
+    console.log(`Loading subcategories for category ID: ${updatedPolicy.categoryId}`);
     
-    try {
-      const res = await axios.get(`${url}/api/categories/${updatedPolicy.categoryId}/subcategories`);
+    const res = await axios.get(`${url}/api/categories/${updatedPolicy.categoryId}/subcategories`);
+    
+    // Check if the response has data and it's an array
+    if (res.data && Array.isArray(res.data)) {
       subcategories.value = res.data;
-    } catch (error) {
-      console.error('Error loading subcategories:', error);
-      // Use placeholder data based on selected category
-      if (updatedPolicy.categoryId === 1) { // Auto
-        subcategories.value = [
-          { SubcategoryID: 1, SubcategoryName: "Auto Liability" },
-          { SubcategoryID: 2, SubcategoryName: "Comprehensive" },
-          { SubcategoryID: 3, SubcategoryName: "Collision" }
-        ];
-      } else if (updatedPolicy.categoryId === 2) { // Home
-        subcategories.value = [
-          { SubcategoryID: 4, SubcategoryName: "Homeowners" },
-          { SubcategoryID: 5, SubcategoryName: "Flood" },
-          { SubcategoryID: 6, SubcategoryName: "Earthquake" }
-        ];
-      } else {
-        subcategories.value = [
-          { SubcategoryID: 7, SubcategoryName: "Basic" },
-          { SubcategoryID: 8, SubcategoryName: "Premium" }
-        ];
-      }
+      console.log("Subcategories loaded:", subcategories.value);
+    } else {
+      console.warn("Received empty or invalid subcategories data");
+      subcategories.value = [];
+    }
+  } catch (error) {
+    console.error('Error loading subcategories:', error);
+    
+    // Set default subcategories based on selected category
+    if (updatedPolicy.categoryId === 1) { // Auto
+      subcategories.value = [
+        { SubcategoryID: 1, SubcategoryName: "Auto Liability" },
+        { SubcategoryID: 2, SubcategoryName: "Comprehensive" },
+        { SubcategoryID: 3, SubcategoryName: "Collision" }
+      ];
+    } else if (updatedPolicy.categoryId === 2) { // Home
+      subcategories.value = [
+        { SubcategoryID: 4, SubcategoryName: "Homeowners" },
+        { SubcategoryID: 5, SubcategoryName: "Flood" },
+        { SubcategoryID: 6, SubcategoryName: "Earthquake" }
+      ];
+    } else {
+      subcategories.value = [
+        { SubcategoryID: 7, SubcategoryName: "Basic" },
+        { SubcategoryID: 8, SubcategoryName: "Premium" }
+      ];
     }
   }
+}
   
   // Validate form before submission
   function validateForm() {
@@ -422,77 +433,75 @@
   }
   
   // Submit the policy
-  async function submitPolicy() {
-    if (!validateForm()) return;
+async function submitPolicy() {
+  if (!validateForm()) return;
+  
+  try {
+    isLoading.value = true;
+    errorMessage.value = '';
     
-    try {
-      isLoading.value = true;
-      
-      // Prepare data for API
-      const policyData = {
-        PolicyID: props.policy.id,
-        CustomerID: props.customerId,
-        CategoryID: updatedPolicy.categoryId,
-        SubcategoryID: updatedPolicy.subcategoryId || null,
-        CompanyID: updatedPolicy.companyId,
-        PolicyNumber: updatedPolicy.policyNumber,
-        Issuer: updatedPolicy.issuer || null,
-        EffectiveDate: updatedPolicy.effectiveDate,
-        ExpirationDate: updatedPolicy.expirationDate || null,
-        Premium: updatedPolicy.premium,
-        AgentRecordID: updatedPolicy.agentRecordId || null,
-        RepresentativeID: updatedPolicy.representativeId || null,
-        AdditionalInfo: updatedPolicy.additionalInfo || null,
-        PolicyStatus: updatedPolicy.status
-      };
-      
-      // Add cancel reason for canceled policies
-      if (props.mode === 'cancel') {
-        policyData.CancelReason = updatedPolicy.cancelReason;
-        policyData.CancelDate = new Date().toISOString().split('T')[0]; // Today's date
-      }
-      
-      console.log("Submitting policy data:", policyData);
-      
-      let apiUrl;
-      if (props.mode === 'rewrite') {
-        apiUrl = `${url}/api/policy/${props.policy.id}/rewrite`;
-      } else if (props.mode === 'renew') {
-        apiUrl = `${url}/api/policy/${props.policy.id}/renew`;
-      } else if (props.mode === 'cancel') {
-        apiUrl = `${url}/api/policy/${props.policy.id}/cancel`;
-      } else {
-        apiUrl = `${url}/api/policy/${props.policy.id}`;
-      }
-      
-      try {
-        // Submit to API
-        const response = await axios.post(apiUrl, policyData);
-        console.log("Policy updated successfully:", response.data);
-        
-        // Emit event to refresh policy list
-        emit('policy-updated', response.data);
-        
-        // Close modal
-        emit('close');
-      } catch (submitError) {
-        console.error('API Error when updating policy:', submitError);
-        if (submitError.response) {
-          console.log("Error response:", submitError.response.data);
-          errorMessage.value = `API Error: ${submitError.response.data.error || submitError.response.statusText}`;
-        } else if (submitError.request) {
-          errorMessage.value = 'Network error. The server did not respond. Please try again.';
-        } else {
-          errorMessage.value = 'Failed to update policy. Please check your data and try again.';
-        }
-      }
-    } catch (error) {
-      console.error('Unexpected error updating policy:', error);
-      errorMessage.value = 'An unexpected error occurred. Please try again.';
-    } finally {
-      isLoading.value = false;
+    // Prepare data for API
+    const policyData = {
+      PolicyID: props.policy.id,
+      CustomerID: props.customerId,
+      CategoryID: updatedPolicy.categoryId,
+      SubcategoryID: updatedPolicy.subcategoryId || null,
+      CompanyID: updatedPolicy.companyId,
+      PolicyNumber: updatedPolicy.policyNumber,
+      Issuer: updatedPolicy.issuer || null,
+      EffectiveDate: updatedPolicy.effectiveDate,
+      ExpirationDate: updatedPolicy.expirationDate || null,
+      Premium: updatedPolicy.premium || 0,
+      AgentRecordID: updatedPolicy.agentRecordId || null,
+      RepresentativeID: updatedPolicy.representativeId || null,
+      AdditionalInfo: updatedPolicy.additionalInfo || null,
+      PolicyStatus: updatedPolicy.status
+    };
+    
+    // Add cancel reason for canceled policies
+    if (props.mode === 'cancel') {
+      policyData.CancelReason = updatedPolicy.cancelReason;
+      policyData.CancelDate = new Date().toISOString().split('T')[0]; // Today's date
     }
+    
+    console.log("Submitting policy data:", policyData);
+    
+    let apiUrl;
+    if (props.mode === 'rewrite') {
+      apiUrl = `${url}/api/policy/${props.policy.id}/rewrite`;
+    } else if (props.mode === 'renew') {
+      apiUrl = `${url}/api/policy/${props.policy.id}/renew`;
+    } else if (props.mode === 'cancel') {
+      apiUrl = `${url}/api/policy/${props.policy.id}/cancel`;
+    } else {
+      apiUrl = `${url}/api/policy/${props.policy.id}`;
+    }
+    
+    const response = await axios.post(apiUrl, policyData);
+    console.log("Policy updated successfully:", response.data);
+    
+    // Emit event to refresh policy list
+    emit('policy-updated', response.data);
+    
+    // Close modal
+    emit('close');
+    
+  } catch (error) {
+    console.error(`Error ${props.mode === 'edit' ? 'updating' : props.mode + 'ing'} policy:`, error);
+    
+    // More detailed error handling
+    if (error.response) {
+      errorMessage.value = `Server error: ${error.response.status} - ${error.response.data.message || error.response.statusText}`;
+    } else if (error.request) {
+      errorMessage.value = 'Network error. Please check your connection and try again.';
+    } else {
+      errorMessage.value = `Error: ${error.message}`;
+    }
+    
+  } finally {
+    isLoading.value = false;
   }
+}
   
   // Initialize component
   onMounted(() => {

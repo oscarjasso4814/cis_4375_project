@@ -250,33 +250,59 @@
   
   // Load subcategories when category changes
   async function loadSubcategories() {
-    if (!policy.categoryId) return;
+  if (!policy.categoryId) return;
+  
+  try {
+    isLoading.value = true;
+    console.log(`Loading subcategories for category ID: ${policy.categoryId}`);
     
-    try {
-      const res = await axios.get(`${url}/api/categories/${policy.categoryId}/subcategories`);
+    const res = await axios.get(`${url}/api/categories/${policy.categoryId}/subcategories`);
+    
+    // Check if the response has data and it's an array
+    if (res.data && Array.isArray(res.data)) {
       subcategories.value = res.data;
       console.log("Subcategories loaded:", subcategories.value);
-    } catch (error) {
-      console.error('Error loading subcategories:', error);
-      // Use placeholder data based on selected category
-      if (policy.categoryId === 1) { // Auto
-        subcategories.value = [
-          { SubcategoryID: 1, SubcategoryName: "Auto Liability" },
-          { SubcategoryID: 2, SubcategoryName: "Comprehensive" },
-          { SubcategoryID: 3, SubcategoryName: "Collision" }
-        ];
-      } else if (policy.categoryId === 2) { // Home
-        subcategories.value = [
-          { SubcategoryID: 4, SubcategoryName: "Homeowners" },
-          { SubcategoryID: 5, SubcategoryName: "Flood" },
-          { SubcategoryID: 6, SubcategoryName: "Earthquake" }
-        ];
-      } else {
-        subcategories.value = [
-          { SubcategoryID: 7, SubcategoryName: "Basic" },
-          { SubcategoryID: 8, SubcategoryName: "Premium" }
-        ];
-      }
+    } else {
+      console.warn("Received empty or invalid subcategories data");
+      subcategories.value = [];
+    }
+  } catch (error) {
+    console.error('Error loading subcategories:', error);
+    
+    // Set default subcategories based on selected category
+    if (policy.categoryId === 1) { // Auto
+      subcategories.value = [
+        { SubcategoryID: 1, SubcategoryName: "Auto Liability" },
+        { SubcategoryID: 2, SubcategoryName: "Comprehensive" },
+        { SubcategoryID: 3, SubcategoryName: "Collision" }
+      ];
+    } else if (policy.categoryId === 2) { // Home
+      subcategories.value = [
+        { SubcategoryID: 4, SubcategoryName: "Homeowners" },
+        { SubcategoryID: 5, SubcategoryName: "Flood" },
+        { SubcategoryID: 6, SubcategoryName: "Earthquake" }
+      ];
+    } else {
+      subcategories.value = [
+        { SubcategoryID: 7, SubcategoryName: "Basic" },
+        { SubcategoryID: 8, SubcategoryName: "Premium" }
+      ];
+    }
+  } finally {
+    isLoading.value = false;
+  }
+}
+  
+  // Validate premium input to ensure it has no more than 2 decimal places
+  const premiumHelpText = ref('');
+  function validatePremiumInput() {
+    const value = policy.premium.toString();
+    const decimalParts = value.split('.');
+    
+    if (decimalParts.length > 1 && decimalParts[1].length > 2) {
+      premiumHelpText.value = 'Premium must be a whole number or have up to 2 decimal places (e.g., 90 or 90.90)';
+    } else {
+      premiumHelpText.value = '';
     }
   }
   
@@ -333,57 +359,55 @@ function validateForm() {
   
   // Submit the policy
   async function submitPolicy() {
-    if (!validateForm()) return;
+  if (!validateForm()) return;
+  
+  try {
+    isLoading.value = true;
+    errorMessage.value = '';
     
-    try {
-      isLoading.value = true;
-      
-      // Prepare data for API
-      const policyData = {
-        CustomerID: props.customerId,
-        CategoryID: policy.categoryId,
-        SubcategoryID: policy.subcategoryId || null,
-        CompanyID: policy.companyId,
-        PolicyNumber: policy.policyNumber,
-        Issuer: policy.issuer || null,
-        EffectiveDate: policy.effectiveDate,
-        ExpirationDate: policy.expirationDate || null,
-        Premium: policy.premium,
-        AgentRecordID: policy.agentRecordId || null,
-        RepresentativeID: policy.representativeId || null,
-        AdditionalInfo: policy.additionalInfo || null
-      };
-      
-      console.log("Submitting policy data:", policyData);
-      
-      try {
-        // Submit to API
-        const response = await axios.post(`${url}/api/policy`, policyData);
-        console.log("Policy created successfully:", response.data);
-        
-        // Emit event to refresh policy list
-        emit('policy-added', response.data);
-        
-        // Close modal
-        emit('close');
-      } catch (submitError) {
-        console.error('API Error when adding policy:', submitError);
-        if (submitError.response) {
-          console.log("Error response:", submitError.response.data);
-          errorMessage.value = `API Error: ${submitError.response.data.error || submitError.response.statusText}`;
-        } else if (submitError.request) {
-          errorMessage.value = 'Network error. The server did not respond. Please try again.';
-        } else {
-          errorMessage.value = 'Failed to add policy. Please check your data and try again.';
-        }
-      }
-    } catch (error) {
-      console.error('Unexpected error adding policy:', error);
-      errorMessage.value = 'An unexpected error occurred. Please try again.';
-    } finally {
-      isLoading.value = false;
+    // Prepare data for API
+    const policyData = {
+      CustomerID: props.customerId,
+      CategoryID: policy.categoryId,
+      SubcategoryID: policy.subcategoryId || null,
+      CompanyID: policy.companyId,
+      PolicyNumber: policy.policyNumber,
+      Issuer: policy.issuer || null,
+      EffectiveDate: policy.effectiveDate,
+      ExpirationDate: policy.expirationDate || null,
+      Premium: policy.premium || 0,
+      AgentRecordID: policy.agentRecordId || null,
+      RepresentativeID: policy.representativeId || null,
+      AdditionalInfo: policy.additionalInfo || null
+    };
+    
+    console.log("Submitting policy data:", policyData);
+    
+    const response = await axios.post(`${url}/api/policy`, policyData);
+    console.log("Policy created successfully:", response.data);
+    
+    // Emit event to refresh policy list
+    emit('policy-added', response.data);
+    
+    // Close modal
+    emit('close');
+    
+  } catch (error) {
+    console.error('Error adding policy:', error);
+    
+    // More detailed error handling
+    if (error.response) {
+      errorMessage.value = `Server error: ${error.response.status} - ${error.response.data.message || error.response.statusText}`;
+    } else if (error.request) {
+      errorMessage.value = 'Network error. Please check your connection and try again.';
+    } else {
+      errorMessage.value = `Error: ${error.message}`;
     }
+    
+  } finally {
+    isLoading.value = false;
   }
+}
   
   // Initialize component
   onMounted(() => {
