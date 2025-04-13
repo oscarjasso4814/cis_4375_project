@@ -581,6 +581,7 @@ async function getPoliciesFromDB(custid) {
     }));
     
     console.log("Fetched policies:", policies.value);
+  });
   } catch (err) {
     console.error("Error loading policies:", err);
   }
@@ -588,7 +589,7 @@ async function getPoliciesFromDB(custid) {
 
 
 // Household member functions
-function calculateAge(dob) {
+async function calculateAge(dob) {
   if (!dob) return '';
   const birth = new Date(dob);
   const today = new Date();
@@ -600,7 +601,7 @@ function calculateAge(dob) {
 
 async function fetchHouseholdMembers() {
   try {
-    await axios.get(`/api/customer/${customer.id}/household-members`).then((response) => {
+    await axios.get(`${url}/api/customer/${customer.id}/householdmember`).then((response) => {
     householdMembers.value = response.data;
   })} catch (error) {
     console.error('Error fetching household members:', error);
@@ -609,10 +610,12 @@ async function fetchHouseholdMembers() {
 
 async function submitNewHouseholdMember() {
   try {
-    await axios.post(`/api/customer/${customer.id}/household-members`, newHouseholdMember.value);
+    await axios.post(`${url}/api/customer/${customer.id}/householdmember`, newHouseholdMember.value);
     isAddingHouseholdMember.value = false;
     resetHouseholdMemberForm();
-    await fetchHouseholdMembers();
+    setTimeout(() => {
+      fetchHouseholdMembers();
+    }, 1000)
   } catch (error) {
     console.error('Error adding household member:', error);
   }
@@ -632,8 +635,10 @@ function resetHouseholdMemberForm() {
 
 async function deactivateHouseholdMember(memberId) {
   try {
-    await axios.delete(`/api/household-members/${memberId}`);
-    await fetchHouseholdMembers();
+    await axios.delete(`${url}/api/householdmember/${memberId}`);
+    setTimeout(() => {
+      fetchHouseholdMembers();
+    }, 1000)
   } catch (error) {
     console.error('Error deactivating household member:', error);
   }
@@ -766,7 +771,9 @@ const handlePolicyUpdated = async (policyData) => {
   alert(message);
   
   // Refresh policies list
-  await getPoliciesFromDB(customer.id);
+  setTimeout(() => {
+    getPoliciesFromDB(customer.id);
+  }, 1000)
 };
 
 // Function to fetch and update customer information
@@ -851,9 +858,11 @@ function editHouseholdMember(member) {
 
 async function submitEditHouseholdMember() {
   try {
-    await axios.put(`/api/household-members/${editingMember.value.HouseholdMemberID}`, editingMember.value);
+    await axios.put(`${url}/api/householdmember/${editingMember.value.HouseholdMemberID}`, editingMember.value);
     isEditingHouseholdMember.value = false;
-    await fetchHouseholdMembers();
+    setTimeout(() => {
+      fetchHouseholdMembers();
+    }, 1000)
   } catch (error) {
     console.error('Error updating household member:', error);
   }
@@ -864,9 +873,15 @@ watch(
   () => route.params.id,
   async (newId) => {
     if (newId) {
-      await getCustomer(newId);
-      await getPoliciesFromDB(newId);
-      await fetchHouseholdMembers();
+      setTimeout(() => {
+      getCustomer(newId);
+    }, 1000)
+    setTimeout(() => {
+      getPoliciesFromDB(newId);
+    }, 2000)
+    setTimeout(() => {
+      fetchHouseholdMembers();
+    }, 3000)
     }
   }
 );
@@ -885,7 +900,9 @@ const handlePolicyAdded = async (policyData) => {
   // Show a success message to the user
   alert(`Policy added successfully! Policy ID: ${policyData.PolicyID}`);
   // Refresh policies list
-  await getPoliciesFromDB(customer.id);
+  setTimeout(() => {
+    getPoliciesFromDB(customer.id);
+  }, 1000)
 };
 
 const showEditPolicyModal = ref(false);
@@ -893,21 +910,29 @@ const selectedPolicy = ref(null);
 const policyEditMode = ref('rewrite'); // 'rewrite', 'renew', or 'cancel'
 
 // Lifecycle hook
-onMounted( async () => {
+onMounted(async () => {
   console.log('Customer profile component mounted');
   
   // Get the customer ID from the route params
   const customerId = route.params.id;
+  customer.id = customerId;
   
   if (customerId) {
-    await getCustomer(customerId);
-    await getPoliciesFromDB(customerId);
-    await fetchHouseholdMembers();
+      getCustomer(customerId);
+    setTimeout(() => {
+      getPoliciesFromDB(customerId);
+    }, 1000)
+    setTimeout(() => {
+      fetchHouseholdMembers();
+    }, 2000)
   } else {
-    // Use a default ID for the ex_cust route
-    await getCustomer(2);
-    await getPoliciesFromDB(2);
-    await fetchHouseholdMembers();
+    getCustomer(2);
+    setTimeout(() => {
+      getPoliciesFromDB(2);
+    }, 1000)
+    setTimeout(() => {
+      fetchHouseholdMembers();
+    }, 2000)
   }
   
   // Fetch representatives for the AddTask component

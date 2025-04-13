@@ -839,7 +839,7 @@ def get_policies_for_customer(customer_id):
 
 
 # Get household members by customer
-@application.route('/api/customer/<int:customer_id>/household-members', methods=['GET'])
+@application.route('/api/customer/<int:customer_id>/householdmember', methods=['GET'])
 def get_household_members(customer_id):
     sql = "SELECT * FROM HouseholdMember WHERE CustomerID = %s AND IsActive = 1"
     cursor.execute(sql, (customer_id,))
@@ -848,7 +848,7 @@ def get_household_members(customer_id):
 
 
 # Add new household member
-@application.route('/api/customer/<int:customer_id>/household-members', methods=['POST'])
+@application.route('/api/customer/<int:customer_id>/householdmember', methods=['POST'])
 def add_household_member(customer_id):
     data = request.get_json()
     sql = """
@@ -873,7 +873,7 @@ def add_household_member(customer_id):
 
 
 # Update household member
-@application.route('/api/household-members/<int:member_id>', methods=['PUT'])
+@application.route('/api/householdmember/<int:member_id>', methods=['PUT'])
 def update_household_member(member_id):
     data = request.get_json()
     sql = """
@@ -905,7 +905,7 @@ def update_household_member(member_id):
 
 
 # Soft delete
-@application.route('/api/household-members/<int:member_id>', methods=['DELETE'])
+@application.route('/api/householdmember/<int:member_id>', methods=['DELETE'])
 def delete_household_member(member_id):
     sql = "UPDATE HouseholdMember SET IsActive = 0 WHERE HouseholdMemberID = %s"
     cursor.execute(sql, (member_id,))
