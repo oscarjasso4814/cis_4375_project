@@ -48,12 +48,17 @@ def get_tasks():
             t.CreatedByRepresentativeID,
             c.FirstName AS CustomerFirstName,
             c.LastName AS CustomerLastName,
-            r.FirstName AS AssignedFirstName,
-            r.LastName AS AssignedLastName
-        FROM Task t
-        LEFT JOIN Customer c ON t.CustomerID = c.CustomerID
-        LEFT JOIN Representative r ON t.AssignedRepresentativeID = r.RepresentativeID
-    """
+            a.FirstName AS AssignedFirstName,
+            a.LastName AS AssignedLastName,
+            cr.FirstName AS CreatedByFirstName,
+            cr.LastName AS CreatedByLastName
+
+            FROM Task t
+            LEFT JOIN Customer c ON t.CustomerID = c.CustomerID
+            LEFT JOIN Representative a ON t.AssignedRepresentativeID = a.RepresentativeID
+            LEFT JOIN Representative cr ON t.CreatedByRepresentativeID = cr.RepresentativeID
+
+        """
     cursor.execute(sql)
     rows = cursor.fetchall()
 
@@ -797,12 +802,28 @@ def get_policies_for_customer(customer_id):
             p.EffectiveDate,
             p.ExpirationDate,
             p.AdditionalInfo,
+            p.Premium,
+            p.PolicyStatus,
+            p.CancelReason,
+            p.CancelDate,
+            p.CategoryID,
+            p.SubcategoryID,
+            p.CompanyID,
+            p.Issuer,
+            p.AgentRecordID,
+            p.RepresentativeID,
             c.CategoryName,
+            s.SubcategoryName,
             co.CompanyName,
-            p.Issuer
+            CONCAT(r.FirstName, ' ', r.LastName) AS RepresentativeName,
+            CONCAT(a_r.FirstName, ' ', a_r.LastName) AS AgentName
         FROM Policy p
         LEFT JOIN Category c ON p.CategoryID = c.CategoryID
+        LEFT JOIN Subcategory s ON p.SubcategoryID = s.SubcategoryID
         LEFT JOIN Company co ON p.CompanyID = co.CompanyID
+        LEFT JOIN Representative r ON p.RepresentativeID = r.RepresentativeID
+        LEFT JOIN AgentOfRecord a ON p.AgentRecordID = a.AgentRecordID
+        LEFT JOIN Representative a_r ON a.RepresentativeID = a_r.RepresentativeID
         WHERE p.CustomerID = %s
         ORDER BY p.EffectiveDate DESC
     """
@@ -960,6 +981,362 @@ def delete_customer_relationship(relationship_id):
     conn.commit()
     return jsonify({'message': 'Relationship deleted'})
 
+
+# API for adding a new policy
+@application.route('/api/policy', methods=['POST'])
+def add_policy():
+    try:
+        # Get JSON data from request
+        data = request.get_json()
+        
+        # Create SQL query for inserting a new policy
+        sql = """
+        INSERT INTO Policy (
+            CompanyID, AgentRecordID, CategoryID, SubcategoryID, 
+            RepresentativeID, PolicyNumber, Issuer, 
+            EffectiveDate, ExpirationDate, AdditionalInfo, Premium, CustomerID
+        ) VALUES (
+            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+        )
+        """
+        
+        # Prepare values for insertion
+        values = (
+            data.get('CompanyID'), 
+            data.get('AgentRecordID'),
+            data.get('CategoryID'),
+            data.get('SubcategoryID'),
+            data.get('RepresentativeID'),
+            data.get('PolicyNumber'),
+            data.get('Issuer'),
+            data.get('EffectiveDate'),
+            data.get('ExpirationDate'),
+            data.get('AdditionalInfo'),
+            data.get('Premium'),
+            data.get('CustomerID')
+        )
+        
+        # Execute the SQL query
+        cursor.execute(sql, values)
+        
+        # Get the ID of the last inserted row
+        policy_id = cursor.lastrowid
+        
+        # Commit the changes
+        conn.commit()
+        
+        # Return the newly created policy ID
+        return jsonify({
+            'message': 'Policy added successfully',
+            'PolicyID': policy_id
+        }), 201
+        
+    except Exception as e:
+        # Log the error
+        print(f"Error adding policy: {str(e)}")
+        
+        # Roll back any changes if an error occurs
+        conn.rollback()
+        
+        # Return error response
+        return jsonify({
+            'error': 'Failed to add policy',
+            'details': str(e)
+        }), 500
+
+# API for getting categories
+@application.route('/api/categories', methods=['GET'])
+def get_categories():
+    try:
+        sql = "SELECT CategoryID, CategoryName FROM Category"
+        cursor.execute(sql)
+        categories = cursor.fetchall()
+        return jsonify(categories)
+    except Exception as e:
+        print(f"Error fetching categories: {str(e)}")
+        return jsonify({
+            'error': 'Failed to fetch categories',
+            'details': str(e)
+        }), 500
+
+# API for getting subcategories by category
+@application.route('/api/categories/<int:category_id>/subcategories', methods=['GET'])
+def get_subcategories(category_id):
+    try:
+        # Make sure to convert category_id to an integer
+        category_id = int(category_id)
+        
+        # Use parameterized query to prevent SQL injection
+        sql = "SELECT SubcategoryID, SubcategoryName FROM Subcategory WHERE CategoryID = %s"
+        cursor.execute(sql, (category_id,))
+        
+        # Fetch all results
+        subcategories = cursor.fetchall()
+        
+        # Return empty list if none found
+        if not subcategories:
+            return jsonify([])
+            
+        return jsonify(subcategories)
+    except Exception as e:
+        print(f"Error fetching subcategories: {str(e)}")
+        # Return a useful error message and empty list
+        return jsonify([]), 500
+
+
+# API for getting companies
+@application.route('/api/companies', methods=['GET'])
+def get_companies():
+    try:
+        sql = "SELECT CompanyID, CompanyName FROM Company"
+        cursor.execute(sql)
+        companies = cursor.fetchall()
+        return jsonify(companies)
+    except Exception as e:
+        print(f"Error fetching companies: {str(e)}")
+        return jsonify({
+            'error': 'Failed to fetch companies',
+            'details': str(e)
+        }), 500
+
+# API for getting agents of record
+@application.route('/api/agents', methods=['GET'])
+def get_agents():
+    try:
+        sql = """
+
+            SELECT 
+                a.AgentRecordID,
+                r.RepresentativeID,
+                CONCAT_WS(' ', r.FirstName, r.MiddleName, r.LastName, r.Suffix) AS FullName,
+                a.StartDate,
+                a.EndDate,
+                a.Status,
+                a.Notes
+            FROM AgentOfRecord a
+            JOIN Representative r ON a.RepresentativeID = r.RepresentativeID;
+        """
+        cursor.execute(sql)
+        agents = cursor.fetchall()
+        return jsonify(agents)
+    except Exception as e:
+        print(f"Error fetching agents: {str(e)}")
+        return jsonify({
+            'error': 'Failed to fetch agents',
+            'details': str(e)
+        }), 500
+
+# Policy management endpoints
+@application.route('/api/policy/<int:policy_id>', methods=['POST'])
+def update_policy(policy_id):
+    """Update an existing policy"""
+    try:
+        data = request.get_json()
+        
+        # Create SQL query for updating a policy
+        sql = """
+        UPDATE Policy SET
+            CompanyID = %s,
+            CategoryID = %s,
+            SubcategoryID = %s,
+            PolicyNumber = %s,
+            Issuer = %s,
+            EffectiveDate = %s,
+            ExpirationDate = %s,
+            Premium = %s,
+            AgentRecordID = %s,
+            RepresentativeID = %s,
+            AdditionalInfo = %s
+        WHERE PolicyID = %s
+        """
+        
+        values = (
+            data.get('CompanyID'),
+            data.get('CategoryID'),
+            data.get('SubcategoryID'),
+            data.get('PolicyNumber'),
+            data.get('Issuer'),
+            data.get('EffectiveDate'),
+            data.get('ExpirationDate'),
+            data.get('Premium'),
+            data.get('AgentRecordID'),
+            data.get('RepresentativeID'),
+            data.get('AdditionalInfo'),
+            policy_id
+        )
+        
+        cursor.execute(sql, values)
+        conn.commit()
+        
+        return jsonify({
+            'message': 'Policy updated successfully',
+            'PolicyID': policy_id
+        })
+        
+    except Exception as e:
+        print(f"Error updating policy: {str(e)}")
+        conn.rollback()
+        return jsonify({
+            'error': 'Failed to update policy',
+            'details': str(e)
+        }), 500
+
+@application.route('/api/policy/<int:policy_id>/rewrite', methods=['POST'])
+def rewrite_policy(policy_id):
+    """Rewrite a policy (create a new one based on the old one but with different terms)"""
+    try:
+        data = request.get_json()
+        
+        # First, mark the original policy as rewritten
+        update_sql = """
+        UPDATE Policy SET
+            PolicyStatus = 'Rewritten'
+        WHERE PolicyID = %s
+        """
+        cursor.execute(update_sql, (policy_id,))
+        
+        # Then, create a new policy with the updated data
+        insert_sql = """
+        INSERT INTO Policy (
+            CustomerID, CompanyID, CategoryID, SubcategoryID, 
+            PolicyNumber, Issuer, EffectiveDate, ExpirationDate,
+            Premium, AgentRecordID, RepresentativeID, AdditionalInfo,
+            PolicyStatus
+        ) VALUES (
+            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'Active'
+        )
+        """
+        
+        values = (
+            data.get('CustomerID'),
+            data.get('CompanyID'),
+            data.get('CategoryID'),
+            data.get('SubcategoryID'),
+            data.get('PolicyNumber'),
+            data.get('Issuer'),
+            data.get('EffectiveDate'),
+            data.get('ExpirationDate'),
+            data.get('Premium'),
+            data.get('AgentRecordID'),
+            data.get('RepresentativeID'),
+            data.get('AdditionalInfo')
+        )
+        
+        cursor.execute(insert_sql, values)
+        new_policy_id = cursor.lastrowid
+        
+        conn.commit()
+        
+        return jsonify({
+            'message': 'Policy rewritten successfully',
+            'OriginalPolicyID': policy_id,
+            'PolicyID': new_policy_id
+        })
+        
+    except Exception as e:
+        print(f"Error rewriting policy: {str(e)}")
+        conn.rollback()
+        return jsonify({
+            'error': 'Failed to rewrite policy',
+            'details': str(e)
+        }), 500
+
+@application.route('/api/policy/<int:policy_id>/renew', methods=['POST'])
+def renew_policy(policy_id):
+    """Renew a policy (create a new one with a new date range)"""
+    try:
+        data = request.get_json()
+        
+        # First, mark the original policy as renewed
+        update_sql = """
+        UPDATE Policy SET
+            PolicyStatus = 'Renewed'
+        WHERE PolicyID = %s
+        """
+        cursor.execute(update_sql, (policy_id,))
+        
+        # Then, create a new policy with the renewed data
+        insert_sql = """
+        INSERT INTO Policy (
+            CustomerID, CompanyID, CategoryID, SubcategoryID, 
+            PolicyNumber, Issuer, EffectiveDate, ExpirationDate,
+            Premium, AgentRecordID, RepresentativeID, AdditionalInfo,
+            PolicyStatus
+        ) VALUES (
+            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'Active'
+        )
+        """
+        
+        values = (
+            data.get('CustomerID'),
+            data.get('CompanyID'),
+            data.get('CategoryID'),
+            data.get('SubcategoryID'),
+            data.get('PolicyNumber'),
+            data.get('Issuer'),
+            data.get('EffectiveDate'),
+            data.get('ExpirationDate'),
+            data.get('Premium'),
+            data.get('AgentRecordID'),
+            data.get('RepresentativeID'),
+            data.get('AdditionalInfo')
+        )
+        
+        cursor.execute(insert_sql, values)
+        new_policy_id = cursor.lastrowid
+        
+        conn.commit()
+        
+        return jsonify({
+            'message': 'Policy renewed successfully',
+            'OriginalPolicyID': policy_id,
+            'PolicyID': new_policy_id
+        })
+        
+    except Exception as e:
+        print(f"Error renewing policy: {str(e)}")
+        conn.rollback()
+        return jsonify({
+            'error': 'Failed to renew policy',
+            'details': str(e)
+        }), 500
+
+@application.route('/api/policy/<int:policy_id>/cancel', methods=['POST'])
+def cancel_policy(policy_id):
+    """Cancel a policy"""
+    try:
+        data = request.get_json()
+        
+        # Mark the policy as canceled
+        update_sql = """
+        UPDATE Policy SET
+            PolicyStatus = 'Canceled',
+            CancelReason = %s,
+            CancelDate = %s
+        WHERE PolicyID = %s
+        """
+        
+        values = (
+            data.get('CancelReason'),
+            data.get('CancelDate') or datetime.now().strftime('%Y-%m-%d'),
+            policy_id
+        )
+        
+        cursor.execute(update_sql, values)
+        conn.commit()
+        
+        return jsonify({
+            'message': 'Policy canceled successfully',
+            'PolicyID': policy_id
+        })
+        
+    except Exception as e:
+        print(f"Error canceling policy: {str(e)}")
+        conn.rollback()
+        return jsonify({
+            'error': 'Failed to cancel policy',
+            'details': str(e)
+        }), 500
 
 if __name__ == "__main__":
     application.run(debug=True, threaded=True)

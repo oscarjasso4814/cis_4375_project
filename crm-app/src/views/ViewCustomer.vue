@@ -107,6 +107,33 @@
                     <button class="secondary-btn" @click="isAddingHouseholdMember = false">Cancel</button>
                   </div>
                 </div>
+
+                <!-- Edit Household Member Form -->
+                <div v-if="isEditingHouseholdMember" class="add-form household-form">
+                  <h4>Edit Household Member</h4>
+                  <div class="form-grid">
+                    <input v-model="editingMember.FirstName" placeholder="First Name" />
+                    <input v-model="editingMember.LastName" placeholder="Last Name" />
+                    <input v-model="editingMember.DateOfBirth" type="date" placeholder="DOB" />
+                    <select v-model="editingMember.Gender">
+                      <option disabled value="">Gender</option>
+                      <option v-for="g in genderOptions" :key="g" :value="g">{{ g }}</option>
+                    </select>
+                    <select v-model="editingMember.MaritalStatus">
+                      <option disabled value="">Marital Status</option>
+                      <option v-for="m in maritalStatusOptions" :key="m" :value="m">{{ m }}</option>
+                    </select>
+                    <input v-model="editingMember.SSN" placeholder="SSN / Tax ID" />
+                    <select v-model="editingMember.Relationship">
+                      <option disabled value="">Relationship</option>
+                      <option v-for="r in relationshipOptions" :key="r" :value="r">{{ r }}</option>
+                    </select>
+                  </div>
+                  <div class="btn-row">
+                    <button class="primary-btn" @click="submitEditHouseholdMember">Save Changes</button>
+                    <button class="secondary-btn" @click="isEditingHouseholdMember = false">Cancel</button>
+                  </div>
+                </div>
                 
                 <!-- Household Members List -->
                 <div v-if="householdMembers.length === 0" class="empty-text">No household members found.</div>
@@ -123,27 +150,25 @@
                     <div v-if="expandedMemberRows[member.HouseholdMemberID]" class="member-card-details">
                       <div class="member-details-grid">
                         <div class="member-detail-item">
-                          <span class="detail-label">DOB:</span>
-                          <span class="detail-value">{{ member.DateOfBirth }}</span>
+                          <span class="detail-label">DOB:</span> <span class="detail-value">{{ formatDate(member.DateOfBirth) }}</span>
                         </div>
                         <div class="member-detail-item">
-                          <span class="detail-label">Gender:</span>
-                          <span class="detail-value">{{ member.Gender }}</span>
+                          <span class="detail-label">Gender:</span> <span class="detail-value">{{ member.Gender }}</span>
                         </div>
                         <div class="member-detail-item">
-                          <span class="detail-label">Marital Status:</span>
-                          <span class="detail-value">{{ member.MaritalStatus }}</span>
+                          <span class="detail-label">Marital Status:</span> <span class="detail-value">{{ member.MaritalStatus }}</span>
                         </div>
                         <div class="member-detail-item">
-                          <span class="detail-label">SSN:</span>
-                          <span class="detail-value">{{ member.SSN }}</span>
+                          <span class="detail-label">SSN:</span> <span class="detail-value">{{ member.SSN }}</span>
                         </div>
                         <div class="member-detail-item">
-                          <span class="detail-label">Relationship:</span>
-                          <span class="detail-value">{{ member.Relationship }}</span>
+                          <span class="detail-label">Relationship:</span> <span class="detail-value">{{ member.Relationship }}</span>
                         </div>
                       </div>
                       <div class="member-actions">
+                        <button class="edit-btn" @click="editHouseholdMember(member)">
+                          <i class="fas fa-edit"></i> Edit
+                        </button>
                         <button class="danger-btn" @click="deactivateHouseholdMember(member.HouseholdMemberID)">
                           <i class="fas fa-trash"></i> Delete
                         </button>
@@ -186,9 +211,7 @@
           <div class="box-content">
             <div class="policies-header">
               <h3>{{ activeInsuranceType }} Insurance Policies</h3>
-              <button class="primary-btn" @click="addNewPolicy">
-                <i class="fas fa-plus"></i> Add Policy
-              </button>
+              
             </div>
             
             <!-- Line item view for policies -->
@@ -197,32 +220,45 @@
                 <table class="policies-table">
                   <thead>
                     <tr>
-                      <th>Name</th>
+                      <th>Status</th>
+                      <th>Company</th>
+                      <th>Category</th>
                       <th>Policy #</th>
                       <th>Coverage</th>
                       <th>Premium</th>
                       <th>Start Date</th>
+                      <th>End Date</th>
+                      <th>Agent</th>
                       <th>Action</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr class="text-color" v-for="policy in getPolicies(activeInsuranceType)" :key="policy.id">
-                      <td>{{ policy.name }}</td>
+                    <tr class="text-color" v-for="policy in getPolicies(activeInsuranceType)" :key="policy.id" :class="{'canceled': policy.status === 'Canceled', 'renewed': policy.status === 'Renewed', 'rewritten': policy.status === 'Rewritten'}">
+                      <td>
+                        <span class="status-pill" :class="getStatusClass(policy.status)">
+                          {{ policy.status || 'Active' }}
+                        </span>
+                      </td>
+                      <td>{{ policy.companyName }}</td>
+                      <td>{{ policy.categoryName }}</td>
                       <td>{{ policy.number }}</td>
                       <td>{{ policy.coverage }}</td>
-                      <td>{{ policy.premium }}</td>
-                      <td>{{ policy.startDate }}</td>
+                      <td>${{ parseFloat(policy.premium).toFixed(2) }}</td>
+                      <td>{{ formatDate(policy.startDate) }}</td>
+                      <td>{{ formatDate(policy.endDate) }}</td>
+                      <td>{{ policy.agentName }}</td>
                       <td>
-                        <div class="dropdown">
+                        <div class="dropdown" v-if="canModifyPolicy(policy)">
                           <button class="dropdown-btn">
                             Action <i class="fas fa-caret-down"></i>
                           </button>
                           <div class="dropdown-content">
-                            <a href="#" @click.prevent="rewritePolicy(policy.id)">Re-write</a>
-                            <a href="#" @click.prevent="renewPolicy(policy.id)">Re-new</a>
-                            <a href="#" @click.prevent="cancelPolicy(policy.id)">Cancel</a>
+                            <a href="#" @click.prevent="rewritePolicy(policy)">Re-write</a>
+                            <a href="#" @click.prevent="renewPolicy(policy)">Re-new</a>
+                            <a href="#" @click.prevent="cancelPolicy(policy)">Cancel</a>
                           </div>
                         </div>
+                        <span v-else class="disabled-actions">{{ getStatusMessage(policy.status) }}</span>
                       </td>
                     </tr>
                   </tbody>
@@ -360,7 +396,28 @@
       @close="showModal = false"
     />
   </div>
+  <!-- Modal for Add Policy -->
+    <AddPolicyModal
+      v-if="showPolicyModal"
+      :customer-id="customer.id"
+      :customer-name="customer.name"
+      @close="showPolicyModal = false"
+      @policy-added="handlePolicyAdded"
+    />
+    
+    <!-- Modal for Edit/Rewrite/Renew/Cancel Policy -->
+    <EditPolicyModal
+      v-if="showEditPolicyModal"
+      :show="showEditPolicyModal"
+      :policy="selectedPolicy"
+      :customer-name="customer.name"
+      :customer-id="customer.id"
+      :mode="policyEditMode"
+      @close="showEditPolicyModal = false"
+      @policy-updated="handlePolicyUpdated"
+    />
 </div>
+
 </template>
 
 <script setup>
@@ -369,6 +426,27 @@ import { ref, reactive, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import axios from "axios";
 import { url } from "../api/apiurl";
+import AddPolicyModal from '../components/AddPolicy.vue';
+import EditPolicyModal from '../components/EditPolicy.vue';
+
+
+function formatDate(dateString) {
+  if (!dateString) return '';
+  
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Invalid Date';
+    
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const year = date.getFullYear();
+    
+    return `${month}/${day}/${year}`;
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return dateString; // Return original if parsing fails
+  }
+}
 
 const route = useRoute();
 const showModal = ref(false);
@@ -472,7 +550,7 @@ const newHouseholdMember = ref({
 const activeTab = ref('notes');
 const contentSectionHeight = ref(300); // Default height
 
-// Fetch policies from backend
+// Updated function to fetch policies from the backend
 async function getPoliciesFromDB(custid) {
   try {
     await axios.get(`${url}/api/customers/${custid}/policies`).then((response) => {
@@ -482,13 +560,32 @@ async function getPoliciesFromDB(custid) {
       name: policy.CompanyName || policy.Issuer || 'Unknown',
       number: policy.PolicyNumber,
       coverage: policy.AdditionalInfo || 'N/A',
-      premium: 'N/A', // placeholder
-      startDate: policy.EffectiveDate || 'N/A'
-    }))});
+      premium: policy.Premium,
+      startDate: policy.EffectiveDate || 'N/A',
+      endDate: policy.ExpirationDate || 'N/A',
+      status: policy.PolicyStatus || 'Active', // Ensure policy status is correctly set
+      cancelReason: policy.CancelReason || null,
+      cancelDate: policy.CancelDate || null,
+      // Additional fields needed for edit modal
+      categoryId: policy.CategoryID,
+      subcategoryId: policy.SubcategoryID,
+      companyId: policy.CompanyID,
+      issuer: policy.Issuer,
+      agentRecordId: policy.AgentRecordID,
+      representativeId: policy.RepresentativeID,
+      // Include the new fields for display
+      categoryName: policy.CategoryName || 'N/A',
+      companyName: policy.CompanyName || 'N/A',
+      agentName: policy.AgentName || 'N/A',
+      representativeName: policy.RepresentativeName || 'N/A'
+    }));
+    
+    console.log("Fetched policies:", policies.value);
   } catch (err) {
     console.error("Error loading policies:", err);
   }
 }
+
 
 // Household member functions
 function calculateAge(dob) {
@@ -542,9 +639,60 @@ async function deactivateHouseholdMember(memberId) {
   }
 }
 
-// Used by UI to filter by tab type
+// Used by UI to filter by tab type and sort by expiration date
 const getPolicies = (type) => {
-  return policies.value.filter(policy => policy.type === type);
+  return policies.value
+    .filter(policy => policy.type === type)
+    .sort((a, b) => {
+      // Sort by expiration date in descending order (most recent first)
+      const dateA = a.endDate ? new Date(a.endDate) : new Date(0);
+      const dateB = b.endDate ? new Date(b.endDate) : new Date(0);
+      return dateB - dateA;
+    });
+};
+
+// Check if a policy can be modified (can't modify already canceled/renewed/rewritten policies)
+function canModifyPolicy(policy) {
+  // Only allow actions on 'Active' policies
+  return policy.status === 'Active' || policy.status === null || policy.status === undefined;
+}
+
+// Get status message for policies that can't be modified
+function getStatusMessage(status) {
+  if (status === 'Canceled') return 'Policy Canceled';
+  if (status === 'Renewed') return 'Policy Renewed';
+  if (status === 'Rewritten') return 'Policy Rewritten';
+  return '';
+}
+
+// Get CSS class for policy status
+function getStatusClass(status) {
+  if (!status || status === 'Active') return 'status-active';
+  if (status === 'Canceled') return 'status-canceled';
+  if (status === 'Renewed') return 'status-renewed';
+  if (status === 'Rewritten') return 'status-rewritten';
+  return '';
+}
+
+// Rewrite policy
+const rewritePolicy = (policy) => {
+  selectedPolicy.value = policy;
+  policyEditMode.value = 'rewrite';
+  showEditPolicyModal.value = true;
+};
+
+// Renew policy
+const renewPolicy = (policy) => {
+  selectedPolicy.value = policy;
+  policyEditMode.value = 'renew';
+  showEditPolicyModal.value = true;
+};
+
+// Cancel policy
+const cancelPolicy = (policy) => {
+  selectedPolicy.value = policy;
+  policyEditMode.value = 'cancel';
+  showEditPolicyModal.value = true;
 };
 
 // Action methods
@@ -563,10 +711,6 @@ const openACORDForms = () => {
   // Implementation would go here
 };
 
-const addNewPolicy = () => {
-  console.log('Opening Add New Policy form...');
-  // Implementation would go here
-};
 
 const addNote = () => {
   console.log('Opening Add Note form...');
@@ -583,21 +727,6 @@ const openMailingServices = () => {
   // Implementation would go here
 };
 
-// New policy action methods
-const rewritePolicy = (policyId) => {
-  console.log(`Rewriting policy ${policyId}...`);
-  // Implementation would go here
-};
-
-const renewPolicy = (policyId) => {
-  console.log(`Renewing policy ${policyId}...`);
-  // Implementation would go here
-};
-
-const cancelPolicy = (policyId) => {
-  console.log(`Cancelling policy ${policyId}...`);
-  // Implementation would go here
-};
 
 // Resize functionality for the combined section
 const startResize = (e) => {
@@ -617,6 +746,27 @@ const resize = (e) => {
 const stopResize = () => {
   document.removeEventListener('mousemove', resize);
   document.removeEventListener('mouseup', stopResize);
+};
+
+// Handle policy update (refresh policies list)
+const handlePolicyUpdated = async (policyData) => {
+  console.log("Policy updated successfully:", policyData);
+  // Show a success message to the user based on the operation
+  let message = '';
+  if (policyEditMode.value === 'rewrite') {
+    message = `Policy rewritten successfully! Policy ID: ${policyData.PolicyID}`;
+  } else if (policyEditMode.value === 'renew') {
+    message = `Policy renewed successfully! Policy ID: ${policyData.PolicyID}`;
+  } else if (policyEditMode.value === 'cancel') {
+    message = `Policy canceled successfully!`;
+  } else {
+    message = `Policy updated successfully! Policy ID: ${policyData.PolicyID}`;
+  }
+  
+  alert(message);
+  
+  // Refresh policies list
+  await getPoliciesFromDB(customer.id);
 };
 
 // Function to fetch and update customer information
@@ -680,6 +830,35 @@ async function getCustomer(custid) {
   }
 }
 
+const isEditingHouseholdMember = ref(false);
+const editingMember = ref({});
+
+function editHouseholdMember(member) {
+  // Create a deep copy of the member object
+  editingMember.value = JSON.parse(JSON.stringify(member));
+  
+  // Format the date for the input field (YYYY-MM-DD format required by date inputs)
+  if (editingMember.value.DateOfBirth) {
+    const date = new Date(editingMember.value.DateOfBirth);
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const year = date.getFullYear();
+    editingMember.value.DateOfBirth = `${year}-${month}-${day}`;
+  }
+  
+  isEditingHouseholdMember.value = true;
+}
+
+async function submitEditHouseholdMember() {
+  try {
+    await axios.put(`/api/household-members/${editingMember.value.HouseholdMemberID}`, editingMember.value);
+    isEditingHouseholdMember.value = false;
+    await fetchHouseholdMembers();
+  } catch (error) {
+    console.error('Error updating household member:', error);
+  }
+}
+
 // Watch for changes in the route parameter and fetch the customer data
 watch(
   () => route.params.id,
@@ -691,6 +870,27 @@ watch(
     }
   }
 );
+
+const showPolicyModal = ref(false);
+
+const addNewPolicy = () => {
+  console.log("Opening policy modal for customer ID:", customer.id);
+  showPolicyModal.value = true;
+};
+
+
+// Function to handle policy added event
+const handlePolicyAdded = async (policyData) => {
+  console.log("Policy added successfully:", policyData);
+  // Show a success message to the user
+  alert(`Policy added successfully! Policy ID: ${policyData.PolicyID}`);
+  // Refresh policies list
+  await getPoliciesFromDB(customer.id);
+};
+
+const showEditPolicyModal = ref(false);
+const selectedPolicy = ref(null);
+const policyEditMode = ref('rewrite'); // 'rewrite', 'renew', or 'cancel'
 
 // Lifecycle hook
 onMounted( async () => {
@@ -996,6 +1196,33 @@ onMounted( async () => {
   transition: background-color 0.2s;
 }
 
+.edit-btn {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-right: 10px;
+  transition: background-color 0.2s;
+}
+
+.edit-btn:hover {
+  background-color: #0069d9;
+}
+
+.member-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed #eee;
+}
+
 .danger-btn:hover {
   background-color: #d32f2f;
 }
@@ -1064,15 +1291,16 @@ onMounted( async () => {
 
 .member-detail-item {
   display: flex;
-  flex-direction: column;
-  margin-bottom: 5px;
+  flex-direction: row;
+  margin-bottom: 8px;
+  align-items: center;
 }
 
 .detail-label {
   font-weight: 600;
   color: #555;
   font-size: 13px;
-  margin-bottom: 3px;
+  margin-right: 5px;
 }
 
 .detail-value {
@@ -1138,6 +1366,7 @@ onMounted( async () => {
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
+  max-height: 60vh;
 }
 
 .policies-table th,
@@ -1210,12 +1439,13 @@ onMounted( async () => {
 }
 
 .action-btn {
+  background-color: #007bff;
+  color: white;
   padding: 10px 15px;
-  background-color: #fff;
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 14px;
-  color: #333;
+
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -1232,7 +1462,8 @@ onMounted( async () => {
 
 .action-btn:hover {
   background-color: #f8f9fa;
-  border-color: #c0c0c0;
+  color: #007bff;
+  border-color: #007bff;
 }
 
 /* Form Buttons */
@@ -1360,7 +1591,18 @@ onMounted( async () => {
     order: -1;
     width: 100%;
   }
+
+  .center-column .box-content {
+  height: 70vh; /* 70% of the viewport height */
+  overflow-y: auto; /* Add scroll if content overflows */
 }
+}
+
+.center-column .box-content {
+  height: 40vh; /* 70% of the viewport height */
+  overflow-y: auto; /* Add scroll if content overflows */
+}
+
 
 @media (max-width: 768px) {
   .profile-header {
@@ -1377,4 +1619,56 @@ onMounted( async () => {
     flex-wrap: wrap;
   }
 }
+
+/* Policy Status Styles */
+.status-pill {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  min-width: 80px;
+}
+
+.status-active {
+  background-color: #28a745;
+  color: white;
+}
+
+.status-canceled {
+  background-color: #dc3545;
+  color: white;
+}
+
+.status-renewed {
+  background-color: #17a2b8;
+  color: white;
+}
+
+.status-rewritten {
+  background-color: #fd7e14;
+  color: white;
+}
+
+tr.canceled {
+  background-color: #ffe6e6 !important;
+}
+
+tr.renewed {
+  background-color: #e6f7ff !important;
+}
+
+tr.rewritten {
+  background-color: #fff3e6 !important;
+}
+
+.disabled-actions {
+  color: #6c757d;
+  font-style: italic;
+  font-size: 13px;
+}
+
+
+
 </style>
