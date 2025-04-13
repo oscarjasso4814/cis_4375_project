@@ -107,6 +107,33 @@
                     <button class="secondary-btn" @click="isAddingHouseholdMember = false">Cancel</button>
                   </div>
                 </div>
+
+                <!-- Edit Household Member Form -->
+                <div v-if="isEditingHouseholdMember" class="add-form household-form">
+                  <h4>Edit Household Member</h4>
+                  <div class="form-grid">
+                    <input v-model="editingMember.FirstName" placeholder="First Name" />
+                    <input v-model="editingMember.LastName" placeholder="Last Name" />
+                    <input v-model="editingMember.DateOfBirth" type="date" placeholder="DOB" />
+                    <select v-model="editingMember.Gender">
+                      <option disabled value="">Gender</option>
+                      <option v-for="g in genderOptions" :key="g" :value="g">{{ g }}</option>
+                    </select>
+                    <select v-model="editingMember.MaritalStatus">
+                      <option disabled value="">Marital Status</option>
+                      <option v-for="m in maritalStatusOptions" :key="m" :value="m">{{ m }}</option>
+                    </select>
+                    <input v-model="editingMember.SSN" placeholder="SSN / Tax ID" />
+                    <select v-model="editingMember.Relationship">
+                      <option disabled value="">Relationship</option>
+                      <option v-for="r in relationshipOptions" :key="r" :value="r">{{ r }}</option>
+                    </select>
+                  </div>
+                  <div class="btn-row">
+                    <button class="primary-btn" @click="submitEditHouseholdMember">Save Changes</button>
+                    <button class="secondary-btn" @click="isEditingHouseholdMember = false">Cancel</button>
+                  </div>
+                </div>
                 
                 <!-- Household Members List -->
                 <div v-if="householdMembers.length === 0" class="empty-text">No household members found.</div>
@@ -123,27 +150,25 @@
                     <div v-if="expandedMemberRows[member.HouseholdMemberID]" class="member-card-details">
                       <div class="member-details-grid">
                         <div class="member-detail-item">
-                          <span class="detail-label">DOB:</span>
-                          <span class="detail-value">{{ member.DateOfBirth }}</span>
+                          <span class="detail-label">DOB:</span> <span class="detail-value">{{ formatDate(member.DateOfBirth) }}</span>
                         </div>
                         <div class="member-detail-item">
-                          <span class="detail-label">Gender:</span>
-                          <span class="detail-value">{{ member.Gender }}</span>
+                          <span class="detail-label">Gender:</span> <span class="detail-value">{{ member.Gender }}</span>
                         </div>
                         <div class="member-detail-item">
-                          <span class="detail-label">Marital Status:</span>
-                          <span class="detail-value">{{ member.MaritalStatus }}</span>
+                          <span class="detail-label">Marital Status:</span> <span class="detail-value">{{ member.MaritalStatus }}</span>
                         </div>
                         <div class="member-detail-item">
-                          <span class="detail-label">SSN:</span>
-                          <span class="detail-value">{{ member.SSN }}</span>
+                          <span class="detail-label">SSN:</span> <span class="detail-value">{{ member.SSN }}</span>
                         </div>
                         <div class="member-detail-item">
-                          <span class="detail-label">Relationship:</span>
-                          <span class="detail-value">{{ member.Relationship }}</span>
+                          <span class="detail-label">Relationship:</span> <span class="detail-value">{{ member.Relationship }}</span>
                         </div>
                       </div>
                       <div class="member-actions">
+                        <button class="edit-btn" @click="editHouseholdMember(member)">
+                          <i class="fas fa-edit"></i> Edit
+                        </button>
                         <button class="danger-btn" @click="deactivateHouseholdMember(member.HouseholdMemberID)">
                           <i class="fas fa-trash"></i> Delete
                         </button>
@@ -369,6 +394,16 @@ import { ref, reactive, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import axios from "axios";
 import { url } from "../api/apiurl";
+
+
+function formatDate(dateString) {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${month}-${day}-${year}`;
+}
 
 const route = useRoute();
 const showModal = ref(false);
@@ -677,6 +712,35 @@ async function getCustomer(custid) {
     }
   } catch (error) {
     console.error('Error fetching customer data:', error);
+  }
+}
+
+const isEditingHouseholdMember = ref(false);
+const editingMember = ref({});
+
+function editHouseholdMember(member) {
+  // Create a deep copy of the member object
+  editingMember.value = JSON.parse(JSON.stringify(member));
+  
+  // Format the date for the input field (YYYY-MM-DD format required by date inputs)
+  if (editingMember.value.DateOfBirth) {
+    const date = new Date(editingMember.value.DateOfBirth);
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const year = date.getFullYear();
+    editingMember.value.DateOfBirth = `${year}-${month}-${day}`;
+  }
+  
+  isEditingHouseholdMember.value = true;
+}
+
+async function submitEditHouseholdMember() {
+  try {
+    await axios.put(`/api/household-members/${editingMember.value.HouseholdMemberID}`, editingMember.value);
+    isEditingHouseholdMember.value = false;
+    await fetchHouseholdMembers();
+  } catch (error) {
+    console.error('Error updating household member:', error);
   }
 }
 
@@ -996,6 +1060,33 @@ onMounted( async () => {
   transition: background-color 0.2s;
 }
 
+.edit-btn {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-right: 10px;
+  transition: background-color 0.2s;
+}
+
+.edit-btn:hover {
+  background-color: #0069d9;
+}
+
+.member-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed #eee;
+}
+
 .danger-btn:hover {
   background-color: #d32f2f;
 }
@@ -1064,15 +1155,16 @@ onMounted( async () => {
 
 .member-detail-item {
   display: flex;
-  flex-direction: column;
-  margin-bottom: 5px;
+  flex-direction: row;
+  margin-bottom: 8px;
+  align-items: center;
 }
 
 .detail-label {
   font-weight: 600;
   color: #555;
   font-size: 13px;
-  margin-bottom: 3px;
+  margin-right: 5px;
 }
 
 .detail-value {
