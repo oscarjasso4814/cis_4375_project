@@ -1,5 +1,6 @@
 <script setup>
 import { RouterLink } from 'vue-router';
+import { user } from '@/stores/userSession';
 </script>
 
 <template>
@@ -24,8 +25,8 @@ import { RouterLink } from 'vue-router';
           <li><RouterLink to="/contact/phone">Phone</RouterLink></li>
         </ul>
       </li>
-      <li><RouterLink to="/login">Login</RouterLink></li>
-      <button v-if="isLoggedIn" @click="handleLogout" class="logout-btn">Logout</button>
+      <li v-if="!user"><RouterLink to="/login">Login</RouterLink></li>
+      <li v-if="user"><RouterLink to="/login">Logout</RouterLink></li>
     </ul>
   </nav>
 </template>

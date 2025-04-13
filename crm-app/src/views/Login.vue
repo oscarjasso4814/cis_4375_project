@@ -1,9 +1,9 @@
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import axios from "axios";
 import { useRouter } from "vue-router";
 import { url } from "../api/apiurl";
-import { setUser } from "../stores/userSession";
+import { setUser, clearUser } from "../stores/userSession";
 
 const username = ref("");
 const password = ref("");
@@ -47,6 +47,10 @@ const handleLogin = async () => {
 };
 
 // Andrews End
+
+onMounted(async () => {
+  clearUser();
+});
 
 //Old Test Code
 //   if (username.value === 'admin' && password.value === 'password') {
