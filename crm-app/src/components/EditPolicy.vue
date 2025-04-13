@@ -319,7 +319,7 @@
       setTimeout(() => {
         // Try to fetch representatives
         try {
-          axios.get(`${url}/api/Representative`).then((response) => {
+            axios.get(`${url}/api/Representative`).then((response) => {
             representatives.value = response.data;
           })
         } catch (error) {
