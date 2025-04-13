@@ -221,12 +221,14 @@
                   <thead>
                     <tr>
                       <th>Status</th>
-                      <th>Name</th>
+                      <th>Company</th>
+                      <th>Category</th>
                       <th>Policy #</th>
                       <th>Coverage</th>
                       <th>Premium</th>
                       <th>Start Date</th>
                       <th>End Date</th>
+                      <th>Agent</th>
                       <th>Action</th>
                     </tr>
                   </thead>
@@ -237,12 +239,14 @@
                           {{ policy.status || 'Active' }}
                         </span>
                       </td>
-                      <td>{{ policy.name }}</td>
+                      <td>{{ policy.companyName }}</td>
+                      <td>{{ policy.categoryName }}</td>
                       <td>{{ policy.number }}</td>
                       <td>{{ policy.coverage }}</td>
                       <td>${{ parseFloat(policy.premium).toFixed(2) }}</td>
                       <td>{{ formatDate(policy.startDate) }}</td>
                       <td>{{ formatDate(policy.endDate) }}</td>
+                      <td>{{ policy.agentName }}</td>
                       <td>
                         <div class="dropdown" v-if="canModifyPolicy(policy)">
                           <button class="dropdown-btn">
@@ -546,8 +550,7 @@ const newHouseholdMember = ref({
 const activeTab = ref('notes');
 const contentSectionHeight = ref(300); // Default height
 
-// Fetch policies from backend
-// Fetch policies from backend
+// Updated function to fetch policies from the backend
 async function getPoliciesFromDB(custid) {
   try {
     const response = await axios.get(`${url}/api/customers/${custid}/policies`);
@@ -560,7 +563,7 @@ async function getPoliciesFromDB(custid) {
       premium: policy.Premium,
       startDate: policy.EffectiveDate || 'N/A',
       endDate: policy.ExpirationDate || 'N/A',
-      status: policy.PolicyStatus || 'Active', // Add status
+      status: policy.PolicyStatus || 'Active', // Ensure policy status is correctly set
       cancelReason: policy.CancelReason || null,
       cancelDate: policy.CancelDate || null,
       // Additional fields needed for edit modal
@@ -569,13 +572,19 @@ async function getPoliciesFromDB(custid) {
       companyId: policy.CompanyID,
       issuer: policy.Issuer,
       agentRecordId: policy.AgentRecordID,
-      representativeId: policy.RepresentativeID
+      representativeId: policy.RepresentativeID,
+      // Include the new fields for display
+      categoryName: policy.CategoryName || 'N/A',
+      companyName: policy.CompanyName || 'N/A',
+      agentName: policy.AgentName || 'N/A',
+      representativeName: policy.RepresentativeName || 'N/A'
     }));
+    
+    console.log("Fetched policies:", policies.value);
   } catch (err) {
     console.error("Error loading policies:", err);
   }
 }
-
 
 
 // Household member functions
@@ -645,7 +654,7 @@ const getPolicies = (type) => {
 // Check if a policy can be modified (can't modify already canceled/renewed/rewritten policies)
 function canModifyPolicy(policy) {
   // Only allow actions on 'Active' policies
-  return !policy.status || policy.status === 'Active';
+  return policy.status === 'Active' || policy.status === null || policy.status === undefined;
 }
 
 // Get status message for policies that can't be modified

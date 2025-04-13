@@ -780,12 +780,27 @@ def get_policies_for_customer(customer_id):
             p.ExpirationDate,
             p.AdditionalInfo,
             p.Premium,
+            p.PolicyStatus,
+            p.CancelReason,
+            p.CancelDate,
+            p.CategoryID,
+            p.SubcategoryID,
+            p.CompanyID,
+            p.Issuer,
+            p.AgentRecordID,
+            p.RepresentativeID,
             c.CategoryName,
+            s.SubcategoryName,
             co.CompanyName,
-            p.Issuer
+            CONCAT(r.FirstName, ' ', r.LastName) AS RepresentativeName,
+            CONCAT(a_r.FirstName, ' ', a_r.LastName) AS AgentName
         FROM Policy p
         LEFT JOIN Category c ON p.CategoryID = c.CategoryID
+        LEFT JOIN Subcategory s ON p.SubcategoryID = s.SubcategoryID
         LEFT JOIN Company co ON p.CompanyID = co.CompanyID
+        LEFT JOIN Representative r ON p.RepresentativeID = r.RepresentativeID
+        LEFT JOIN AgentOfRecord a ON p.AgentRecordID = a.AgentRecordID
+        LEFT JOIN Representative a_r ON a.RepresentativeID = a_r.RepresentativeID
         WHERE p.CustomerID = %s
         ORDER BY p.EffectiveDate DESC
     """
