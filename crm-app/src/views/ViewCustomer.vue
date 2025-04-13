@@ -220,6 +220,7 @@
                 <table class="policies-table">
                   <thead>
                     <tr>
+                      <th>Status</th>
                       <th>Name</th>
                       <th>Policy #</th>
                       <th>Coverage</th>
@@ -230,24 +231,30 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr class="text-color" v-for="policy in getPolicies(activeInsuranceType)" :key="policy.id">
+                    <tr class="text-color" v-for="policy in getPolicies(activeInsuranceType)" :key="policy.id" :class="{'canceled': policy.status === 'Canceled', 'renewed': policy.status === 'Renewed', 'rewritten': policy.status === 'Rewritten'}">
+                      <td>
+                        <span class="status-pill" :class="getStatusClass(policy.status)">
+                          {{ policy.status || 'Active' }}
+                        </span>
+                      </td>
                       <td>{{ policy.name }}</td>
                       <td>{{ policy.number }}</td>
                       <td>{{ policy.coverage }}</td>
-                      <td>{{ policy.premium }}</td>
-                      <td>{{ policy.startDate }}</td>
-                      <td>{{ policy.endDate }}</td>
+                      <td>${{ parseFloat(policy.premium).toFixed(2) }}</td>
+                      <td>{{ formatDate(policy.startDate) }}</td>
+                      <td>{{ formatDate(policy.endDate) }}</td>
                       <td>
-                        <div class="dropdown">
+                        <div class="dropdown" v-if="canModifyPolicy(policy)">
                           <button class="dropdown-btn">
                             Action <i class="fas fa-caret-down"></i>
                           </button>
                           <div class="dropdown-content">
-                            <a href="#" @click.prevent="rewritePolicy(policy.id)">Re-write</a>
-                            <a href="#" @click.prevent="renewPolicy(policy.id)">Re-new</a>
-                            <a href="#" @click.prevent="cancelPolicy(policy.id)">Cancel</a>
+                            <a href="#" @click.prevent="rewritePolicy(policy)">Re-write</a>
+                            <a href="#" @click.prevent="renewPolicy(policy)">Re-new</a>
+                            <a href="#" @click.prevent="cancelPolicy(policy)">Cancel</a>
                           </div>
                         </div>
+                        <span v-else class="disabled-actions">{{ getStatusMessage(policy.status) }}</span>
                       </td>
                     </tr>
                   </tbody>
@@ -393,6 +400,18 @@
       @close="showPolicyModal = false"
       @policy-added="handlePolicyAdded"
     />
+    
+    <!-- Modal for Edit/Rewrite/Renew/Cancel Policy -->
+    <EditPolicyModal
+      v-if="showEditPolicyModal"
+      :show="showEditPolicyModal"
+      :policy="selectedPolicy"
+      :customer-name="customer.name"
+      :customer-id="customer.id"
+      :mode="policyEditMode"
+      @close="showEditPolicyModal = false"
+      @policy-updated="handlePolicyUpdated"
+    />
 </div>
 
 </template>
@@ -404,15 +423,25 @@ import { useRoute } from 'vue-router';
 import axios from "axios";
 import { url } from "../api/apiurl";
 import AddPolicyModal from '../components/AddPolicy.vue';
+import EditPolicyModal from '../components/EditPolicy.vue';
 
 
 function formatDate(dateString) {
   if (!dateString) return '';
-  const date = new Date(dateString);
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const year = date.getFullYear();
-  return `${month}-${day}-${year}`;
+  
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Invalid Date';
+    
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const year = date.getFullYear();
+    
+    return `${month}/${day}/${year}`;
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return dateString; // Return original if parsing fails
+  }
 }
 
 const route = useRoute();
@@ -518,6 +547,7 @@ const activeTab = ref('notes');
 const contentSectionHeight = ref(300); // Default height
 
 // Fetch policies from backend
+// Fetch policies from backend
 async function getPoliciesFromDB(custid) {
   try {
     const response = await axios.get(`${url}/api/customers/${custid}/policies`);
@@ -530,11 +560,23 @@ async function getPoliciesFromDB(custid) {
       premium: policy.Premium,
       startDate: policy.EffectiveDate || 'N/A',
       endDate: policy.ExpirationDate || 'N/A',
+      status: policy.PolicyStatus || 'Active', // Add status
+      cancelReason: policy.CancelReason || null,
+      cancelDate: policy.CancelDate || null,
+      // Additional fields needed for edit modal
+      categoryId: policy.CategoryID,
+      subcategoryId: policy.SubcategoryID,
+      companyId: policy.CompanyID,
+      issuer: policy.Issuer,
+      agentRecordId: policy.AgentRecordID,
+      representativeId: policy.RepresentativeID
     }));
   } catch (err) {
     console.error("Error loading policies:", err);
   }
 }
+
+
 
 // Household member functions
 function calculateAge(dob) {
@@ -588,9 +630,60 @@ async function deactivateHouseholdMember(memberId) {
   }
 }
 
-// Used by UI to filter by tab type
+// Used by UI to filter by tab type and sort by expiration date
 const getPolicies = (type) => {
-  return policies.value.filter(policy => policy.type === type);
+  return policies.value
+    .filter(policy => policy.type === type)
+    .sort((a, b) => {
+      // Sort by expiration date in descending order (most recent first)
+      const dateA = a.endDate ? new Date(a.endDate) : new Date(0);
+      const dateB = b.endDate ? new Date(b.endDate) : new Date(0);
+      return dateB - dateA;
+    });
+};
+
+// Check if a policy can be modified (can't modify already canceled/renewed/rewritten policies)
+function canModifyPolicy(policy) {
+  // Only allow actions on 'Active' policies
+  return !policy.status || policy.status === 'Active';
+}
+
+// Get status message for policies that can't be modified
+function getStatusMessage(status) {
+  if (status === 'Canceled') return 'Policy Canceled';
+  if (status === 'Renewed') return 'Policy Renewed';
+  if (status === 'Rewritten') return 'Policy Rewritten';
+  return '';
+}
+
+// Get CSS class for policy status
+function getStatusClass(status) {
+  if (!status || status === 'Active') return 'status-active';
+  if (status === 'Canceled') return 'status-canceled';
+  if (status === 'Renewed') return 'status-renewed';
+  if (status === 'Rewritten') return 'status-rewritten';
+  return '';
+}
+
+// Rewrite policy
+const rewritePolicy = (policy) => {
+  selectedPolicy.value = policy;
+  policyEditMode.value = 'rewrite';
+  showEditPolicyModal.value = true;
+};
+
+// Renew policy
+const renewPolicy = (policy) => {
+  selectedPolicy.value = policy;
+  policyEditMode.value = 'renew';
+  showEditPolicyModal.value = true;
+};
+
+// Cancel policy
+const cancelPolicy = (policy) => {
+  selectedPolicy.value = policy;
+  policyEditMode.value = 'cancel';
+  showEditPolicyModal.value = true;
 };
 
 // Action methods
@@ -625,21 +718,6 @@ const openMailingServices = () => {
   // Implementation would go here
 };
 
-// New policy action methods
-const rewritePolicy = (policyId) => {
-  console.log(`Rewriting policy ${policyId}...`);
-  // Implementation would go here
-};
-
-const renewPolicy = (policyId) => {
-  console.log(`Renewing policy ${policyId}...`);
-  // Implementation would go here
-};
-
-const cancelPolicy = (policyId) => {
-  console.log(`Cancelling policy ${policyId}...`);
-  // Implementation would go here
-};
 
 // Resize functionality for the combined section
 const startResize = (e) => {
@@ -659,6 +737,27 @@ const resize = (e) => {
 const stopResize = () => {
   document.removeEventListener('mousemove', resize);
   document.removeEventListener('mouseup', stopResize);
+};
+
+// Handle policy update (refresh policies list)
+const handlePolicyUpdated = async (policyData) => {
+  console.log("Policy updated successfully:", policyData);
+  // Show a success message to the user based on the operation
+  let message = '';
+  if (policyEditMode.value === 'rewrite') {
+    message = `Policy rewritten successfully! Policy ID: ${policyData.PolicyID}`;
+  } else if (policyEditMode.value === 'renew') {
+    message = `Policy renewed successfully! Policy ID: ${policyData.PolicyID}`;
+  } else if (policyEditMode.value === 'cancel') {
+    message = `Policy canceled successfully!`;
+  } else {
+    message = `Policy updated successfully! Policy ID: ${policyData.PolicyID}`;
+  }
+  
+  alert(message);
+  
+  // Refresh policies list
+  await getPoliciesFromDB(customer.id);
 };
 
 // Function to fetch and update customer information
@@ -780,7 +879,9 @@ const handlePolicyAdded = async (policyData) => {
   await getPoliciesFromDB(customer.id);
 };
 
-
+const showEditPolicyModal = ref(false);
+const selectedPolicy = ref(null);
+const policyEditMode = ref('rewrite'); // 'rewrite', 'renew', or 'cancel'
 
 // Lifecycle hook
 onMounted( async () => {
@@ -1509,4 +1610,56 @@ onMounted( async () => {
     flex-wrap: wrap;
   }
 }
+
+/* Policy Status Styles */
+.status-pill {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  min-width: 80px;
+}
+
+.status-active {
+  background-color: #28a745;
+  color: white;
+}
+
+.status-canceled {
+  background-color: #dc3545;
+  color: white;
+}
+
+.status-renewed {
+  background-color: #17a2b8;
+  color: white;
+}
+
+.status-rewritten {
+  background-color: #fd7e14;
+  color: white;
+}
+
+tr.canceled {
+  background-color: #ffe6e6 !important;
+}
+
+tr.renewed {
+  background-color: #e6f7ff !important;
+}
+
+tr.rewritten {
+  background-color: #fff3e6 !important;
+}
+
+.disabled-actions {
+  color: #6c757d;
+  font-style: italic;
+  font-size: 13px;
+}
+
+
+
 </style>
