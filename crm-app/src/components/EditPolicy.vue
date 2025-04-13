@@ -270,8 +270,9 @@
     try {
       // Try to fetch categories
       try {
-        const categoriesRes = await axios.get(`${url}/api/categories`);
-        categories.value = categoriesRes.data;
+        axios.get(`${url}/api/categories`).then((response) => {
+          categories.value = response.data;
+        })
       } catch (error) {
         console.error("Error loading categories:", error);
         categories.value = [
@@ -282,48 +283,57 @@
         ];
       }
       
-      // Try to fetch companies
-      try {
-        const companiesRes = await axios.get(`${url}/api/companies`);
-        companies.value = companiesRes.data;
-      } catch (error) {
-        console.error("Error loading companies:", error);
-        companies.value = [
-          { CompanyID: 1, CompanyName: "State Farm" },
-          { CompanyID: 2, CompanyName: "Allstate" },
-          { CompanyID: 3, CompanyName: "Progressive" }
-        ];
-      }
+      setTimeout(() => {
+        // Try to fetch companies
+        try {
+          axios.get(`${url}/api/companies`).then((response) => {
+            companies.value = response.data;
+          })
+        } catch (error) {
+          console.error("Error loading companies:", error);
+          companies.value = [
+            { CompanyID: 1, CompanyName: "State Farm" },
+            { CompanyID: 2, CompanyName: "Allstate" },
+            { CompanyID: 3, CompanyName: "Progressive" }
+          ];
+        }
+      }, 1000)
+
+      setTimeout(() => {
+        // Try to fetch agents
+        try {
+          axios.get(`${url}/api/agents`).then((response) => {
+            agents.value = response.data;
+          })
+        } catch (error) {
+          console.error("Error loading agents:", error);
+          agents.value = [
+            { AgentRecordID: 1, FullName: "John Agent" },
+            { AgentRecordID: 2, FullName: "Mary Agent" }
+          ];
+        }
+      }, 2000)
       
-      // Try to fetch agents
-      try {
-        const agentsRes = await axios.get(`${url}/api/agents`);
-        agents.value = agentsRes.data;
-      } catch (error) {
-        console.error("Error loading agents:", error);
-        agents.value = [
-          { AgentRecordID: 1, FullName: "John Agent" },
-          { AgentRecordID: 2, FullName: "Mary Agent" }
-        ];
-      }
-      
-      // Try to fetch representatives
-      try {
-        const repsRes = await axios.get(`${url}/api/Representative`);
-        representatives.value = repsRes.data;
-      } catch (error) {
-        console.error("Error loading representatives:", error);
-        representatives.value = [
-          { RepresentativeID: 1, FirstName: "John", LastName: "Doe" },
-          { RepresentativeID: 2, FirstName: "Jane", LastName: "Smith" }
-        ];
-      }
-      
-      // Set current user as representative if available
-      const currentRepId = localStorage.getItem('reps_id');
-      if (currentRepId) {
-        updatedPolicy.representativeId = parseInt(currentRepId);
-      }
+      setTimeout(() => {
+        // Try to fetch representatives
+        try {
+          await axios.get(`${url}/api/Representative`).then((response) => {
+            representatives.value = response.data;
+          })
+        } catch (error) {
+          console.error("Error loading representatives:", error);
+          representatives.value = [
+            { RepresentativeID: 1, FirstName: "John", LastName: "Doe" },
+            { RepresentativeID: 2, FirstName: "Jane", LastName: "Smith" }
+          ];
+        }
+        
+        // Set current user as representative if available
+        const currentRepId = localStorage.getItem('reps_id');
+        if (currentRepId) {
+          updatedPolicy.representativeId = parseInt(currentRepId);
+        }
+      }, 3000)
       
     } catch (error) {
       console.error('Error loading form data:', error);
@@ -340,16 +350,16 @@
   try {
     console.log(`Loading subcategories for category ID: ${updatedPolicy.categoryId}`);
     
-    const res = await axios.get(`${url}/api/categories/${updatedPolicy.categoryId}/subcategories`);
-    
-    // Check if the response has data and it's an array
-    if (res.data && Array.isArray(res.data)) {
-      subcategories.value = res.data;
-      console.log("Subcategories loaded:", subcategories.value);
-    } else {
-      console.warn("Received empty or invalid subcategories data");
-      subcategories.value = [];
-    }
+    await axios.get(`${url}/api/categories/${updatedPolicy.categoryId}/subcategories`).then((response) => {
+      // Check if the response has data and it's an array
+      if (response.data && Array.isArray(response.data)) {
+        subcategories.value = response.data;
+        console.log("Subcategories loaded:", subcategories.value);
+      } else {
+        console.warn("Received empty or invalid subcategories data");
+        subcategories.value = [];
+      }
+    })
   } catch (error) {
     console.error('Error loading subcategories:', error);
     
@@ -477,15 +487,15 @@ async function submitPolicy() {
       apiUrl = `${url}/api/policy/${props.policy.id}`;
     }
     
-    const response = await axios.post(apiUrl, policyData);
-    console.log("Policy updated successfully:", response.data);
+    await axios.post(apiUrl, policyData).then((response) => {
+      console.log("Policy updated successfully:", response.data);
     
     // Emit event to refresh policy list
     emit('policy-updated', response.data);
     
     // Close modal
     emit('close');
-    
+    })
   } catch (error) {
     console.error(`Error ${props.mode === 'edit' ? 'updating' : props.mode + 'ing'} policy:`, error);
     
