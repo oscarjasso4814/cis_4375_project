@@ -70,6 +70,91 @@
               <div class="info-label">SSN/Tax ID:</div>
               <div class="info-value">{{ customer.ssnTaxId }}</div>
             </div>
+            
+            <!-- Start of Household Members Section -->
+            <div class="info-row household-members-section">
+              <div class="info-value">
+                <div class="household-subheader">
+                  <h3>Household Members</h3>
+                  <button class="add-member-btn" @click="isAddingHouseholdMember = !isAddingHouseholdMember">
+                    Add Member
+                  </button>
+                </div>
+                
+                <!-- Add Household Member Form -->
+                <div v-if="isAddingHouseholdMember" class="add-form household-form">
+                  <h4>Add Household Member</h4>
+                  <div class="form-grid">
+                    <input v-model="newHouseholdMember.FirstName" placeholder="First Name" />
+                    <input v-model="newHouseholdMember.LastName" placeholder="Last Name" />
+                    <input v-model="newHouseholdMember.DateOfBirth" type="date" placeholder="DOB" />
+                    <select v-model="newHouseholdMember.Gender">
+                      <option disabled value="">Gender</option>
+                      <option v-for="g in genderOptions" :key="g" :value="g">{{ g }}</option>
+                    </select>
+                    <select v-model="newHouseholdMember.MaritalStatus">
+                      <option disabled value="">Marital Status</option>
+                      <option v-for="m in maritalStatusOptions" :key="m" :value="m">{{ m }}</option>
+                    </select>
+                    <input v-model="newHouseholdMember.SSN" placeholder="SSN / Tax ID" />
+                    <select v-model="newHouseholdMember.Relationship">
+                      <option disabled value="">Relationship</option>
+                      <option v-for="r in relationshipOptions" :key="r" :value="r">{{ r }}</option>
+                    </select>
+                  </div>
+                  <div class="btn-row">
+                    <button class="primary-btn" @click="submitNewHouseholdMember">Save</button>
+                    <button class="secondary-btn" @click="isAddingHouseholdMember = false">Cancel</button>
+                  </div>
+                </div>
+                
+                <!-- Household Members List -->
+                <div v-if="householdMembers.length === 0" class="empty-text">No household members found.</div>
+                
+                <div class="members-list">
+                  <div v-for="member in householdMembers" :key="member.HouseholdMemberID" class="member-card">
+                    <div class="member-card-header" @click="expandedMemberRows[member.HouseholdMemberID] = !expandedMemberRows[member.HouseholdMemberID]">
+                      {{ member.FirstName }} {{ member.LastName }} - Age: {{ calculateAge(member.DateOfBirth) }}
+                      <span class="arrow-icon">
+                        <i :class="expandedMemberRows[member.HouseholdMemberID] ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
+                      </span>
+                    </div>
+                    
+                    <div v-if="expandedMemberRows[member.HouseholdMemberID]" class="member-card-details">
+                      <div class="member-details-grid">
+                        <div class="member-detail-item">
+                          <span class="detail-label">DOB:</span>
+                          <span class="detail-value">{{ member.DateOfBirth }}</span>
+                        </div>
+                        <div class="member-detail-item">
+                          <span class="detail-label">Gender:</span>
+                          <span class="detail-value">{{ member.Gender }}</span>
+                        </div>
+                        <div class="member-detail-item">
+                          <span class="detail-label">Marital Status:</span>
+                          <span class="detail-value">{{ member.MaritalStatus }}</span>
+                        </div>
+                        <div class="member-detail-item">
+                          <span class="detail-label">SSN:</span>
+                          <span class="detail-value">{{ member.SSN }}</span>
+                        </div>
+                        <div class="member-detail-item">
+                          <span class="detail-label">Relationship:</span>
+                          <span class="detail-value">{{ member.Relationship }}</span>
+                        </div>
+                      </div>
+                      <div class="member-actions">
+                        <button class="danger-btn" @click="deactivateHouseholdMember(member.HouseholdMemberID)">
+                          <i class="fas fa-trash"></i> Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- End of Household Members Section -->
+            
             <div class="info-row">
               <div class="info-label">Agent of Record:</div>
               <div class="info-value">{{ customer.agentOfRecord }}</div>
@@ -364,6 +449,29 @@ const policies = ref([]);
 // Active insurance type tab
 const activeInsuranceType = ref('LIFE');
 
+// Household members variables
+const householdMembers = ref([]);
+const expandedMemberRows = ref({});
+const isAddingHouseholdMember = ref(false);
+
+const genderOptions = ['Male', 'Female', 'Other'];
+const maritalStatusOptions = ['Single', 'Married', 'Divorced', 'Widowed'];
+const relationshipOptions = ['Spouse', 'Child', 'Parent', 'Sibling', 'Other'];
+
+const newHouseholdMember = ref({
+  FirstName: '',
+  LastName: '',
+  DateOfBirth: '',
+  Gender: '',
+  MaritalStatus: '',
+  SSN: '',
+  Relationship: ''
+});
+
+// Active tab
+const activeTab = ref('notes');
+const contentSectionHeight = ref(300); // Default height
+
 // Fetch policies from backend
 async function getPoliciesFromDB(custid) {
   try {
@@ -379,6 +487,58 @@ async function getPoliciesFromDB(custid) {
     }));
   } catch (err) {
     console.error("Error loading policies:", err);
+  }
+}
+
+// Household member functions
+function calculateAge(dob) {
+  if (!dob) return '';
+  const birth = new Date(dob);
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  return age;
+}
+
+async function fetchHouseholdMembers() {
+  try {
+    const res = await axios.get(`/api/customer/${customer.id}/household-members`);
+    householdMembers.value = res.data;
+  } catch (error) {
+    console.error('Error fetching household members:', error);
+  }
+}
+
+async function submitNewHouseholdMember() {
+  try {
+    await axios.post(`/api/customer/${customer.id}/household-members`, newHouseholdMember.value);
+    isAddingHouseholdMember.value = false;
+    resetHouseholdMemberForm();
+    await fetchHouseholdMembers();
+  } catch (error) {
+    console.error('Error adding household member:', error);
+  }
+}
+
+function resetHouseholdMemberForm() {
+  newHouseholdMember.value = {
+    FirstName: '',
+    LastName: '',
+    DateOfBirth: '',
+    Gender: '',
+    MaritalStatus: '',
+    SSN: '',
+    Relationship: ''
+  };
+}
+
+async function deactivateHouseholdMember(memberId) {
+  try {
+    await axios.delete(`/api/household-members/${memberId}`);
+    await fetchHouseholdMembers();
+  } catch (error) {
+    console.error('Error deactivating household member:', error);
   }
 }
 
@@ -437,6 +597,26 @@ const renewPolicy = (policyId) => {
 const cancelPolicy = (policyId) => {
   console.log(`Cancelling policy ${policyId}...`);
   // Implementation would go here
+};
+
+// Resize functionality for the combined section
+const startResize = (e) => {
+  e.preventDefault();
+  document.addEventListener('mousemove', resize);
+  document.addEventListener('mouseup', stopResize);
+};
+
+const resize = (e) => {
+  const container = e.target.parentElement;
+  const newHeight = e.clientY - container.getBoundingClientRect().top;
+  if (newHeight > 100) { // Minimum height
+    contentSectionHeight.value = newHeight;
+  }
+};
+
+const stopResize = () => {
+  document.removeEventListener('mousemove', resize);
+  document.removeEventListener('mouseup', stopResize);
 };
 
 // Function to fetch and update customer information
@@ -507,6 +687,7 @@ watch(
     if (newId) {
       await getCustomer(newId);
       await getPoliciesFromDB(newId);
+      await fetchHouseholdMembers();
     }
   }
 );
@@ -518,21 +699,18 @@ onMounted( async () => {
   // Get the customer ID from the route params
   const customerId = route.params.id;
   
-  await getCustomer(customerId);
-  await getPoliciesFromDB(customerId);
-
-  console.log("Fetched policies:", policies.value);
-  
-  // If no ID in route, use a default
   if (customerId) {
-    getCustomer(customerId);
+    await getCustomer(customerId);
+    await getPoliciesFromDB(customerId);
+    await fetchHouseholdMembers();
   } else {
     // Use a default ID for the ex_cust route
-    getCustomer(2);
+    await getCustomer(2);
+    await getPoliciesFromDB(2);
+    await fetchHouseholdMembers();
   }
   
   // Fetch representatives for the AddTask component
-  // This should be implemented to fetch actual representatives from your database
   repList.value = [
     { RepresentativeID: 1, FirstName: 'Amin', LastName: 'Lalani' },
     { RepresentativeID: 2, FirstName: 'John', LastName: 'Doe' }
@@ -691,6 +869,223 @@ onMounted( async () => {
 .info-value {
   flex: 1;
   color: #333;
+}
+
+/* Household Members Styles */
+.household-members-section {
+  margin-top: 25px;
+  margin-bottom: 25px;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.household-members-section .info-label {
+  width: 100%;
+  margin-bottom: 5px;
+  font-size: 16px;
+  color: #444;
+}
+
+.household-members-section .info-value {
+  width: 100%;
+}
+
+.household-subheader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #e5e5e5;
+  padding-bottom: 8px;
+}
+
+.household-subheader h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #444;
+}
+
+.add-member-btn {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 6px 15px;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.add-member-btn:hover {
+  background-color: #0069d9;
+}
+
+.add-form {
+  background-color: #f8f9fa;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 15px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.household-form h4 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 15px;
+  color: #333;
+  font-weight: 600;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 15px;
+}
+
+.form-grid input,
+.form-grid select {
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.form-grid input:focus,
+.form-grid select:focus {
+  outline: none;
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
+
+.btn-row {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-start;
+}
+
+.secondary-btn {
+  background-color: #f8f9fa;
+  border: 1px solid #ccc;
+  color: #333;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.secondary-btn:hover {
+  background-color: #e9ecef;
+}
+
+.danger-btn {
+  background-color: #f44336;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: background-color 0.2s;
+}
+
+.danger-btn:hover {
+  background-color: #d32f2f;
+}
+
+.empty-text {
+  color: #777;
+  font-style: italic;
+  padding: 10px 0;
+  font-size: 14px;
+  text-align: center;
+}
+
+.members-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.member-card {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  transition: box-shadow 0.2s;
+}
+
+.member-card:hover {
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.member-card-header {
+  background-color: #f8f9fa;
+  padding: 10px 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  font-weight: 500;
+  color: #333;
+  transition: background-color 0.2s;
+}
+
+.member-card-header:hover {
+  background-color: #eff2f7;
+}
+
+.arrow-icon {
+  display: flex;
+  align-items: center;
+  color: #777;
+  font-size: 14px;
+}
+
+.member-card-details {
+  padding: 15px;
+  background-color: #fff;
+  border-top: 1px solid #eee;
+}
+
+.member-details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.member-detail-item {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 5px;
+}
+
+.detail-label {
+  font-weight: 600;
+  color: #555;
+  font-size: 13px;
+  margin-bottom: 3px;
+}
+
+.detail-value {
+  color: #333;
+  font-size: 14px;
+}
+
+.member-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed #eee;
 }
 
 /* Insurance Tabs */
