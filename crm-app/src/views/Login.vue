@@ -3,7 +3,7 @@ import { ref, onMounted } from "vue";
 import axios from "axios";
 import { useRouter } from "vue-router";
 import { url } from "../api/apiurl";
-import { setUser, clearUser } from "../stores/userSession";
+import { user, setUser, clearUser, totalWorkedTime } from "../stores/userSession";
 
 const username = ref("");
 const password = ref("");
@@ -48,7 +48,16 @@ const handleLogin = async () => {
 // Andrews End
 
 onMounted(async () => {
-  clearUser();
+  if (totalWorkedTime.value) {
+    const repsId = localStorage.getItem("reps_id");
+    await axios.post(`${url}/api/WorkSession`, {
+      RepresentativeID: repsId,
+      TotalWorkedTime: totalWorkedTime.value
+    });
+  }
+  if (user) {
+    clearUser();
+  }
 });
 
 //Old Test Code
