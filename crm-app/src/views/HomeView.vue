@@ -2,6 +2,8 @@
 import AnnouncementOverlay from '../components/AnnouncementOverlay.vue';
 import CustomerSearch from '../components/CustomerSearch.vue';
 import TaskOverlay from '../components/TaskOverlay.vue';
+import AddNotes from '../components/AddNotes.vue';
+import ClockInOut from '../components/ClockInOut.vue';
 
 </script>
 
@@ -16,6 +18,12 @@ import TaskOverlay from '../components/TaskOverlay.vue';
         </div>
         <div class="box box-2">
           <TaskOverlay />
+        </div>
+        <div class="box box-4">
+          <AddNotes />
+        </div>
+        <div class="box box-4">
+          <ClockInOut />
         </div>
       </div>
       <!-- Right Column -->
