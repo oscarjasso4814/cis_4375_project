@@ -20,9 +20,10 @@ import ClockInOut from '../components/ClockInOut.vue';
         <div class="box box-2">
           <TaskOverlay />
         </div>
+        <!--
         <div class="box box-4">
           <AddCustomerNotes />
-        </div>
+        </div> -->
         <div class="box box-4">
           <ClockInOut />
         </div>

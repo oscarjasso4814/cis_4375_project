@@ -91,7 +91,7 @@
             <label>Agent of Record:</label>
             <select v-model="policy.agentRecordId">
               <option disabled value="">-- Select Agent --</option>
-              <option v-for="agent in agents" :key="agent.AgentRecordID" :value="agent.AgentRecordID">
+              <option calss="dp-text" v-for="agent in agents" :key="agent.AgentRecordID" :value="agent.AgentRecordID">
                 {{ agent.AgentName }}
               </option>
             </select>
@@ -446,6 +446,11 @@ function validateForm() {
     margin-bottom: 20px;
     color: #333;
     text-align: center;
+  }
+
+  .dp-text {
+    color: #007bff;
+    font-weight: 600;
   }
   
   .customer-info {

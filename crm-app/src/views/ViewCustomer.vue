@@ -9,12 +9,6 @@
         <span :class="['status-badge', customer.status.toLowerCase()]">{{ customer.status }}</span>
       </div>
       <div class="header-actions">
-        <button class="icon-btn" title="Print Profile" @click="printProfile">
-          <i class="fas fa-print"></i>
-        </button>
-        <button class="icon-btn" title="Video Call" @click="startVideoCall">
-          <i class="fas fa-video"></i>
-        </button>
       </div>
     </header>
 
@@ -56,7 +50,7 @@
             </div>
             <div class="info-row">
               <div class="info-label">DOB:</div>
-              <div class="info-value">{{ customer.dob }}</div>
+              <div class="info-value">{{ formatDate(customer.dob) }}</div>
             </div>
             <div class="info-row">
               <div class="info-label">Gender:</div>
@@ -181,11 +175,8 @@
             <!-- End of Household Members Section -->
             
             <div class="info-row">
-              <div class="info-label">Agent of Record:</div>
-              <div class="info-value">{{ customer.agentOfRecord }}</div>
             </div>
             <div class="info-row">
-              <div class="info-label">Date Added:</div>
               <div class="info-value">{{ customer.dateAdded }}</div>
             </div>
           </div>
@@ -289,17 +280,9 @@
               >
                 <i class="fas fa-paperclip"></i> Attachments
               </button>
-              <button 
-                :class="['toggle-btn', { active: activeTab === 'tasks' }]" 
-                @click="activeTab = 'tasks'"
-              >
-                <i class="fas fa-tasks"></i> Tasks
-              </button>
+
             </div>
             <div>
-              <button v-if="activeTab === 'notes'" class="primary-btn" @click="addNote">
-                <i class="fas fa-plus"></i> Add Note
-              </button>
               <button v-if="activeTab === 'attachments'" class="primary-btn">
                 <i class="fas fa-plus"></i> Add Attachment
               </button>
@@ -311,8 +294,10 @@
           <div class="box-content" :style="{ height: contentSectionHeight + 'px' }">
             <!-- Notes Content -->
             <div v-if="activeTab === 'notes'" class="tab-content">
-              <p class="placeholder-text">Customer notes will appear here</p>
-              <!-- Notes will be implemented later -->
+              <CustomerNotes 
+                :customer-id="String(customer.id)" 
+                :customer-name="customer.name" 
+              />
             </div>
             
             <!-- Attachments Content -->
@@ -348,10 +333,6 @@
               <button class="action-btn" @click="showModal = true">
                 <i class="fas fa-tasks"></i>
                 Add Task
-              </button>
-              <button class="action-btn" @click="addNote">
-                <i class="fas fa-sticky-note"></i>
-                Add Note
               </button>
               <button class="action-btn" @click="openACORDForms">
                 <i class="fas fa-file-alt"></i>
@@ -421,7 +402,8 @@
 
 <script setup>
 import AddTask from '@/components/AddTask.vue'
-import { ref, reactive, onMounted, watch } from 'vue';
+import CustomerNotes from '@/components/CustomerNotes.vue';
+import { ref, reactive, onMounted, watch, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import axios from "axios";
 import { url } from "../api/apiurl";
@@ -976,6 +958,24 @@ const showEditPolicyModal = ref(false);
 const selectedPolicy = ref(null);
 const policyEditMode = ref('rewrite'); // 'rewrite', 'renew', or 'cancel'
 
+const agents = ref([]);
+
+/*function fetchagentofrecord() {
+  try {
+    axios.get(`${url}/api/agents`).then((response) => {
+      agents.value = response.data;
+    });
+  } catch (error) {
+    console.error('Error fetching agents:', error);
+  }
+}
+
+const agentOfRecordName = computed(() => {
+  const agent = agents.value.find(agent => agent.AgentRecordID === customer.agentOfRecord);
+  return agent ? agent.FullName : 'Unknown Agent';
+});
+*/
+
 // Lifecycle hook
 onMounted(async () => {
   console.log('Customer profile component mounted');
@@ -1000,6 +1000,7 @@ onMounted(async () => {
     setTimeout(() => {
       fetchHouseholdMembers();
     }, 2000)
+    
   }
   
   // Fetch representatives for the AddTask component
@@ -1008,6 +1009,8 @@ onMounted(async () => {
     { RepresentativeID: 2, FirstName: 'John', LastName: 'Doe' }
   ];
 });
+
+
 </script>
 
 <style scoped>
@@ -1111,7 +1114,7 @@ onMounted(async () => {
 }
 
 .right-column {
-  width: 20%;
+  width: 10%;
   min-width: 200px;
 }
 

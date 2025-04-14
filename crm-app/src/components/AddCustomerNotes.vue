@@ -46,7 +46,7 @@ const deleteNote = (index) => {
 
 <template>
   <div>
-    <div class="sidebar-panel">
+      <div class="sidebar-panel">
       <h3 class="panel-title">Customer Notes</h3>
 
       <!-- Add Note button -->

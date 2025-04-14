@@ -1048,12 +1048,35 @@ def add_policy():
 @application.route('/api/categories', methods=['GET'])
 def get_categories():
     try:
+        # Create a new cursor for each request to avoid potential issues
+        cursor = conn.cursor(dictionary=True, buffered=True)
+        
         sql = "SELECT CategoryID, CategoryName FROM Category"
         cursor.execute(sql)
+        
+        # Fetch all results explicitly
         categories = cursor.fetchall()
-        return jsonify(categories)
+        
+        # Convert any non-serializable values to strings
+        result = []
+        for category in categories:
+            serializable_category = {}
+            for key, value in category.items():
+                # Handle type conversion for non-serializable types
+                if isinstance(value, (datetime, date, timedelta, bytes, bytearray)):
+                    serializable_category[key] = str(value)
+                else:
+                    serializable_category[key] = value
+            result.append(serializable_category)
+        
+        return jsonify(result)
     except Exception as e:
+        # Log detailed error information
         print(f"Error fetching categories: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        
+        # Return a helpful error message
         return jsonify({
             'error': 'Failed to fetch categories',
             'details': str(e)
@@ -1337,6 +1360,94 @@ def cancel_policy(policy_id):
             'error': 'Failed to cancel policy',
             'details': str(e)
         }), 500
+    
+
+# Get all notes for a specific customer
+@application.route('/api/customer/<int:customer_id>/notes', methods=['GET'])
+@cross_origin()
+def get_customer_notes(customer_id):
+    sql = """
+        SELECT 
+            n.NoteID,
+            n.CustomerID,
+            n.CreatedByRepresentativeID,
+            n.PolicyID,
+            n.CustomerName,
+            n.PolicyName,
+            n.DateCreated,
+            n.NoteType,
+            n.NoteContent,
+            CONCAT(r.FirstName, ' ', r.LastName) AS RepresentativeName
+        FROM Note n
+        LEFT JOIN Representative r ON n.CreatedByRepresentativeID = r.RepresentativeID
+        WHERE n.CustomerID = %s
+        ORDER BY n.DateCreated DESC
+    """
+    
+    cursor.execute(sql, (customer_id,))
+    notes = cursor.fetchall()
+    
+
+    # Handle datetime serialization
+    def convert(val):
+        if isinstance(val, (datetime, date, timedelta)):
+            return str(val)
+        return val
+
+    # Convert all values to be JSON serializable
+    result = [
+        {key: convert(value) for key, value in note.items()}
+        for note in notes
+    ]
+    
+    return jsonify(result)
+
+# Create a new note
+@application.route('/api/note', methods=['POST'])
+def create_note():
+    data = request.get_json()
+    
+    sql = """
+        INSERT INTO Note (
+            CustomerID,
+            CreatedByRepresentativeID,
+            PolicyID,
+            CustomerName,
+            PolicyName,
+            NoteType,
+            NoteContent
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+    """
+    
+    values = (
+        data.get('CustomerID'),
+        data.get('CreatedByRepresentativeID'),
+        data.get('PolicyID'),
+        data.get('CustomerName'),
+        data.get('PolicyName'),
+        data.get('NoteType'),
+        data.get('NoteContent')
+    )
+    
+    cursor.execute(sql, values)
+    note_id = cursor.lastrowid
+    conn.commit()
+    
+    return jsonify({
+        'message': 'Note created successfully',
+        'NoteID': note_id
+    }), 201
+
+# Delete a note
+@application.route('/api/note/<int:note_id>', methods=['DELETE'])
+def delete_note(note_id):
+    sql = "DELETE FROM Note WHERE NoteID = %s"
+    cursor.execute(sql, (note_id,))
+    conn.commit()
+    
+    return jsonify({
+        'message': 'Note deleted successfully'
+    })
 
 if __name__ == "__main__":
     application.run(debug=True, threaded=True)

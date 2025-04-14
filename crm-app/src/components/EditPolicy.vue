@@ -241,7 +241,7 @@
       const day = String(nextMonth.getDate()).padStart(2, '0');
       updatedPolicy.effectiveDate = `${year}-${month}-${day}`;
       updatedPolicy.expirationDate = ''; // Clear the expiration date for renewal
-      updatedPolicy.policyNumber = `${policy.number}-R`; // Append -R to indicate renewal
+      updatedPolicy.policyNumber = `${policy.number}`; // Append renewal
     }
     
     // Update status based on mode
