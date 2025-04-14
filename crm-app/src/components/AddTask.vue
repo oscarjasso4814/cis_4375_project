@@ -79,7 +79,7 @@ const task = ref({
 })
 
 function fetchRep() {
-  axios.get('http://127.0.0.1:5000/api/Representative')
+  axios.get(`${url}/api/Representative`)  //${url}/api/tasks
     .then(res => {
       representatives.value = res.data
     })
@@ -89,7 +89,7 @@ function fetchRep() {
 }
 
 function fetchCreatorName() {
-  axios.get(`http://127.0.0.1:5000/api/rep/${createdByRep.value}/name`)
+  axios.get(`${url}/api/rep/${createdByRep.value}/name`)
     .then(res => {
       if (res.data.length > 0) {
         const rep = res.data[0]
