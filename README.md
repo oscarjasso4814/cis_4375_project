@@ -2,6 +2,10 @@
 
 group 1 repository
 
+## Architecture
+
+network_architecture.yaml is a sample template for the architecture in AWS CloudFormation used for demonstration and testing. It's a single leg architecture with no redundancy; use with caution or adjust as needed for deployment.
+
 ## Frontend
 Vue.js 3 App
 
