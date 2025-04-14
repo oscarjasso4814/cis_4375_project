@@ -2,12 +2,11 @@ import flask
 from flask import jsonify
 from flask import request
 from flask_cors import CORS
-from flask_cors import cross_origin
 import mysql.connector
 import credsHelp
 from datetime import datetime, date, timedelta
-#Andrews Import DELETE ME LATER
 import bcrypt
+import traceback
 
 from mysql.connector import Error
 from sqlHelp import create_connection
@@ -19,18 +18,15 @@ myCreds = credsHelp.Creds()
 conn = create_connection(myCreds.conString, myCreds.userName, myCreds.password, myCreds.dbName)
 cursor = conn.cursor(dictionary=True, buffered=True)
 
-cors = CORS()
 
 
 # Setting up an application name
 application = flask.Flask(__name__) #sets up the application
 application.config["DEBUG"] = True #allow to show errors in browser
-cors.init_app(application)
-@cross_origin()
+CORS(application, resources={r"/api/*": {"origins": "*"}})
 
 # Get request to get all task from the task table
 @application.route('/api/tasks', methods=['GET'])
-@cross_origin()
 def get_tasks():
     sql = """
         SELECT 
@@ -114,8 +110,6 @@ def get_task_by_id(task_id):
         return jsonify(result)
     else:
         return jsonify({'message': 'Task not found'}), 404
-    
-from flask import request
 
 # Post API Call to add a Task
 @application.route('/api/tasks', methods=['POST'])
@@ -344,7 +338,6 @@ def search_customers():
     except Exception as e:
         # Log the error with more detail to help debugging
         print(f"Error in customer search: {str(e)}")
-        import traceback
         traceback.print_exc()
         # Return a more helpful error message
         return jsonify({"error": "An error occurred while searching for customers", "details": str(e)}), 500
@@ -1339,4 +1332,4 @@ def cancel_policy(policy_id):
         }), 500
 
 if __name__ == "__main__":
-    application.run(debug=True, threaded=True)
+    application.run()
