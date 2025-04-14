@@ -86,6 +86,7 @@
 <script setup>
 import { ref, watch, onMounted, defineProps, defineEmits } from 'vue'
 import axios from 'axios'
+import { url } from "../api/apiurl"
 
 const emit = defineEmits(['close', 'save', 'delete'])
 
@@ -105,7 +106,7 @@ watch(
   { immediate: true }
 )
 function fetchRep() {
-  axios.get('http://127.0.0.1:5000/api/Representative')
+  axios.get(url + '/api/Representative')
     .then(res => {
       representatives.value = res.data
     })
@@ -121,17 +122,6 @@ onMounted(async () => {
   }, 1000)
 });
 
- 
-/*
-onMounted(() => {
-  axios.get('http://127.0.0.1:5000/api/Representative')
-    .then(res => {
-      representatives.value = res.data
-    })
-    .catch(err => {
-      console.error('Failed to fetch representatives:', err)
-    })
-})*/
 </script>
 
 <style scoped>
