@@ -19,6 +19,9 @@
         <div class="box customer-details">
           <div class="box-header">
             <h2>Contact</h2>
+            <button @click="editCustomer" class="edit-btn">
+              <i class="fas fa-edit"></i> Edit
+            </button>
           </div>
           <div class="box-content">
             <div class="info-row">
@@ -404,12 +407,18 @@
 import AddTask from '@/components/AddTask.vue'
 import CustomerNotes from '@/components/CustomerNotes.vue';
 import { ref, reactive, onMounted, watch, computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import axios from "axios";
 import { url } from "../api/apiurl";
 import AddPolicyModal from '../components/AddPolicy.vue';
 import EditPolicyModal from '../components/EditPolicy.vue';
 
+
+//route editCustomer
+const router = useRouter();
+const editCustomer = () => {
+  router.push(`/EditCustomer/${customer.id}`);
+};
 
 function formatDate(dateString) {
   if (!dateString) return '';

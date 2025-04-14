@@ -668,7 +668,7 @@ const usStates = [
           </div>
         </div>
         
-        <!-- Household Information Section -->
+        <!-- Household Information Section 
         <div class="form-section">
           <h2 class="section-title">Household Information</h2>
           <div class="form-grid">
@@ -687,7 +687,7 @@ const usStates = [
               <input type="number" id="household-income" v-model="customer.householdIncome" class="input-field" min="0">
             </div>
           </div>
-        </div>
+        </div>   -->
         
         <!-- Preferences Section -->
         <div class="form-section">

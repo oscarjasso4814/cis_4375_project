@@ -647,118 +647,62 @@ def update_customer(customer_id):
         # Get JSON data from request
         data = request.get_json()
         
-        # Create SQL query for updating an existing customer
-        sql = """
+        # Build dynamic SQL update statement based on provided fields
+        update_fields = []
+        values = []
+        
+        # Check which fields are provided in the request and add them to the update statement
+        field_map = {
+            'FirstName': 'FirstName', 
+            'LastName': 'LastName',
+            'MiddleName': 'MiddleName',
+            'Suffix': 'Suffix',
+            'Title': 'Title',
+            'Salutation': 'Salutation',
+            'Phone1': 'Phone1',
+            'Phone2': 'Phone2',
+            'Phone3': 'Phone3',
+            'Email1': 'Email1',
+            'Email2': 'Email2',
+            'Website': 'Website',
+            'Address': 'Address',
+            'City': 'City',
+            'State': 'State',
+            'Zip': 'Zip',
+            'MailingAddress': 'MailingAddress',
+            'MailingCity': 'MailingCity',
+            'MailingState': 'MailingState',
+            'MailingZip': 'MailingZip',
+            'DateOfBirth': 'DateOfBirth',
+            'Gender': 'Gender',
+            'MaritalStatus': 'MaritalStatus',
+            'SocialSecurityNum': 'SocialSecurityNum',
+            'DriversLicenseNum': 'DriversLicenseNum',
+            'DriversLicenseState': 'DriversLicenseState'
+        }
+        
+        # Loop through field map and add fields to update if they exist in the request
+        for request_field, db_field in field_map.items():
+            if request_field in data:
+                update_fields.append(f"{db_field} = %s")
+                values.append(data.get(request_field))
+        
+        # If no fields to update, return early
+        if not update_fields:
+            return jsonify({
+                'message': 'No fields to update',
+                'CustomerID': customer_id
+            })
+        
+        # Construct the SQL query
+        sql = f"""
         UPDATE Customer SET
-            Type = %s, 
-            FirstName = %s, 
-            MiddleName = %s, 
-            LastName = %s, 
-            Suffix = %s,
-            Title = %s, 
-            Salutation = %s, 
-            ActiveStatus = %s, 
-            Country = %s, 
-            IsUSACitizen = %s,
-            Address = %s, 
-            Zip = %s, 
-            City = %s, 
-            State = %s, 
-            AddressVerified = %s,
-            MailingCountry = %s, 
-            MailingAddress = %s, 
-            MailingZip = %s, 
-            MailingCity = %s, 
-            MailingState = %s,
-            Phone1 = %s, 
-            Phone2 = %s, 
-            Phone3 = %s, 
-            Phone4 = %s,
-            DriversLicenseNum = %s, 
-            DriversLicenseState = %s, 
-            DateLicensed = %s,
-            DateOfBirth = %s, 
-            SocialSecurityNum = %s, 
-            Gender = %s, 
-            MaritalStatus = %s,
-            HouseholdSize = %s, 
-            PeopleApplying = %s, 
-            HouseholdIncome = %s,
-            Email1 = %s, 
-            Email2 = %s, 
-            Website = %s, 
-            PreferredContact = %s,
-            DoNotEmail = %s, 
-            DoNotText = %s, 
-            DoNotCall = %s, 
-            DoNotMail = %s, 
-            DoNotMarket = %s, 
-            DoNotCaptureEmail = %s,
-            UndeliverableMail = %s, 
-            BadCell = %s, 
-            BadPhone2 = %s, 
-            BadPhone3 = %s, 
-            BadPhone4 = %s,
-            UndeliverableEmail1 = %s, 
-            UndeliverableEmail2 = %s
+            {', '.join(update_fields)}
         WHERE CustomerID = %s
         """
         
-        # Prepare values for update
-        values = (
-            data.get('Type'), 
-            data.get('FirstName'), 
-            data.get('MiddleName'), 
-            data.get('LastName'), 
-            data.get('Suffix'),
-            data.get('Title'), 
-            data.get('Salutation'), 
-            data.get('ActiveStatus'), 
-            data.get('Country'), 
-            data.get('IsUSACitizen'),
-            data.get('Address'), 
-            data.get('Zip'), 
-            data.get('City'), 
-            data.get('State'), 
-            data.get('AddressVerified'),
-            data.get('MailingCountry'), 
-            data.get('MailingAddress'), 
-            data.get('MailingZip'), 
-            data.get('MailingCity'), 
-            data.get('MailingState'),
-            data.get('Phone1'), 
-            data.get('Phone2'), 
-            data.get('Phone3'), 
-            data.get('Phone4'),
-            data.get('DriversLicenseNum'), 
-            data.get('DriversLicenseState'), 
-            data.get('DateLicensed'),
-            data.get('DateOfBirth'), 
-            data.get('SocialSecurityNum'), 
-            data.get('Gender'), 
-            data.get('MaritalStatus'),
-            data.get('HouseholdSize'), 
-            data.get('PeopleApplying'), 
-            data.get('HouseholdIncome'),
-            data.get('Email1'), 
-            data.get('Email2'), 
-            data.get('Website'), 
-            data.get('PreferredContact'),
-            data.get('DoNotEmail'), 
-            data.get('DoNotText'), 
-            data.get('DoNotCall'), 
-            data.get('DoNotMail'), 
-            data.get('DoNotMarket'), 
-            data.get('DoNotCaptureEmail'),
-            data.get('UndeliverableMail'), 
-            data.get('BadCell'), 
-            data.get('BadPhone2'), 
-            data.get('BadPhone3'), 
-            data.get('BadPhone4'),
-            data.get('UndeliverableEmail1'), 
-            data.get('UndeliverableEmail2'),
-            customer_id  # WHERE condition value
-        )
+        # Add customer ID to values
+        values.append(customer_id)
         
         # Execute the SQL query
         cursor.execute(sql, values)
@@ -790,7 +734,6 @@ def update_customer(customer_id):
             'error': 'Failed to update customer',
             'details': str(e)
         }), 500
-    
 
 
 @application.route('/api/customers/<int:customer_id>/policies', methods=['GET'])
